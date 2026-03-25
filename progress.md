@@ -7,7 +7,7 @@
 - [x] 005 - Quiz Engine
 - [x] 006 - Home Screen
 - [x] 007 - Quiz Screen UI & Components
-- [ ] 008 - Fretboard Diagram Component
+- [x] 008 - Fretboard Diagram Component
 - [ ] 009 - Results Screen
 - [ ] 010 - Stats & Mastery Dashboard
 - [ ] 011 - Settings Screen

@@ -11,6 +11,8 @@ import { TimerBar } from '../components/TimerBar';
 import { ScoreCounter } from '../components/ScoreCounter';
 import { PitchIndicator } from '../components/PitchIndicator';
 import { FeedbackOverlay } from '../components/FeedbackOverlay';
+import { FretboardDiagram } from '../components/FretboardDiagram';
+import type { GuitarString, Note } from '../types';
 
 export default function QuizScreen() {
   const router = useRouter();
@@ -20,6 +22,7 @@ export default function QuizScreen() {
   const pitch = usePitchDetection();
 
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
+  const [lastCombo, setLastCombo] = useState<{ string: GuitarString; note: Note } | null>(null);
   const [timerRemaining, setTimerRemaining] = useState(settings.timerDurationSec);
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevResultsLenRef = useRef(0);
@@ -48,6 +51,7 @@ export default function QuizScreen() {
     if (len > prevResultsLenRef.current) {
       const lastResult = quiz.results[len - 1];
       setFeedback(lastResult.correct ? 'correct' : 'incorrect');
+      setLastCombo({ string: lastResult.combo.string, note: lastResult.expectedNote });
       // Reset timer for next question
       if (settings.timerEnabled) {
         setTimerRemaining(settings.timerDurationSec);
@@ -129,6 +133,16 @@ export default function QuizScreen() {
       <View style={styles.promptArea}>
         <NotePrompt prompt={quiz.currentPrompt} />
       </View>
+
+      {/* Fretboard diagram after answer */}
+      {feedback && lastCombo && settings.showFretboardAfterAnswer && (
+        <FretboardDiagram
+          highlightString={lastCombo.string}
+          highlightNote={lastCombo.note}
+          minFret={settings.minFret}
+          maxFret={settings.maxFret}
+        />
+      )}
 
       {/* Pitch indicator + mic status */}
       <View style={styles.bottomArea}>

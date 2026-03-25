@@ -20,6 +20,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   timerDurationSec: 10,
   soundEnabled: true,
   smartWeighting: true,
+  showFretboardAfterAnswer: true,
 };
 
 interface SettingsStore extends AppSettings {

@@ -65,4 +65,5 @@ export interface AppSettings {
   timerDurationSec: number;
   soundEnabled: boolean;
   smartWeighting: boolean;
+  showFretboardAfterAnswer: boolean;
 }
