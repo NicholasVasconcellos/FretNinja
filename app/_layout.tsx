@@ -10,12 +10,24 @@ export default function RootLayout() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: colors.background },
-          animation: 'slide_from_right',
+          animation: 'fade_from_bottom',
+          animationDuration: 250,
         }}
       >
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="quiz" options={{ gestureEnabled: false }} />
-        <Stack.Screen name="results" />
+        <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+        <Stack.Screen
+          name="quiz"
+          options={{
+            gestureEnabled: false,
+            animation: 'fade_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="results"
+          options={{
+            animation: 'slide_from_bottom',
+          }}
+        />
       </Stack>
     </>
   );

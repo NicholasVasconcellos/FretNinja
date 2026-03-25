@@ -16,12 +16,19 @@ export function TimerBar({ remaining, total }: TimerBarProps) {
   useEffect(() => {
     Animated.timing(animatedWidth, {
       toValue: fraction,
-      duration: 300,
+      duration: 950,
       useNativeDriver: false,
     }).start();
   }, [fraction]);
 
   const barColor =
+    fraction > 0.5
+      ? colors.neonGreen
+      : fraction > 0.25
+        ? colors.neonYellow
+        : colors.hotPink;
+
+  const glowColor =
     fraction > 0.5
       ? colors.neonGreen
       : fraction > 0.25
@@ -35,6 +42,7 @@ export function TimerBar({ remaining, total }: TimerBarProps) {
           styles.fill,
           {
             backgroundColor: barColor,
+            shadowColor: glowColor,
             width: animatedWidth.interpolate({
               inputRange: [0, 1],
               outputRange: ['0%', '100%'],
@@ -52,10 +60,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceLight,
     borderRadius: 3,
     marginHorizontal: spacing.lg,
-    overflow: 'hidden',
+    overflow: 'visible',
   },
   fill: {
     height: '100%',
     borderRadius: 3,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.7,
+    shadowRadius: 8,
+    elevation: 4,
   },
 });

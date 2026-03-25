@@ -12,6 +12,7 @@ import { ScoreCounter } from '../components/ScoreCounter';
 import { PitchIndicator } from '../components/PitchIndicator';
 import { FeedbackOverlay } from '../components/FeedbackOverlay';
 import { FretboardDiagram } from '../components/FretboardDiagram';
+import { loadSounds, playCorrectSound, playWrongSound, unloadSounds } from '../utils/sounds';
 import type { GuitarString, Note } from '../types';
 
 export default function QuizScreen() {
@@ -28,13 +29,15 @@ export default function QuizScreen() {
   const prevResultsLenRef = useRef(0);
   const hasNavigatedRef = useRef(false);
 
-  // Start round and mic on mount
+  // Start round, mic, and preload sounds on mount
   useEffect(() => {
     quiz.startRound();
     pitch.start();
+    loadSounds();
     return () => {
       pitch.stop();
       quiz.abort();
+      unloadSounds();
     };
   }, []);
 
@@ -45,13 +48,22 @@ export default function QuizScreen() {
     }
   }, [pitch.detectedNote]);
 
-  // Track feedback from new results
+  // Track feedback from new results — play sounds
   useEffect(() => {
     const len = quiz.results.length;
     if (len > prevResultsLenRef.current) {
       const lastResult = quiz.results[len - 1];
-      setFeedback(lastResult.correct ? 'correct' : 'incorrect');
+      const isCorrect = lastResult.correct;
+      setFeedback(isCorrect ? 'correct' : 'incorrect');
       setLastCombo({ string: lastResult.combo.string, note: lastResult.expectedNote });
+
+      // Play SFX (non-blocking)
+      if (isCorrect) {
+        playCorrectSound();
+      } else {
+        playWrongSound();
+      }
+
       // Reset timer for next question
       if (settings.timerEnabled) {
         setTimerRemaining(settings.timerDurationSec);
@@ -209,6 +221,10 @@ const styles = StyleSheet.create({
   },
   micDotActive: {
     backgroundColor: colors.neonGreen,
+    shadowColor: colors.neonGreen,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
   },
   micLabel: {
     fontSize: 12,

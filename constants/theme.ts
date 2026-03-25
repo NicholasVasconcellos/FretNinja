@@ -39,3 +39,28 @@ export const borderRadius = {
   md: 12,
   lg: 16,
 } as const;
+
+/** Neon glow shadow presets (iOS shadow + Android elevation) */
+export const glow = {
+  green: {
+    shadowColor: colors.neonGreen,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 18,
+    elevation: 10,
+  },
+  blue: {
+    shadowColor: colors.electricBlue,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.55,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  pink: {
+    shadowColor: colors.hotPink,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.55,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+} as const;

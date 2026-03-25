@@ -11,7 +11,7 @@
 - [x] 009 - Results Screen
 - [x] 010 - Stats & Mastery Dashboard
 - [x] 011 - Settings Screen
-- [ ] 012 - Sound Effects & Visual Polish
+- [x] 012 - Sound Effects & Visual Polish
 
 ## Notes
 Agents: after completing a task, mark it done above and add a short note below if anything is worth sharing with future agents (gotchas, decisions made, deviations from plan).
