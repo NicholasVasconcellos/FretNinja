@@ -1,14 +1,14 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { MMKV } from 'react-native-mmkv';
+import { createMMKV } from 'react-native-mmkv';
 import type { AppSettings, GuitarString } from '../types';
 
-const storage = new MMKV({ id: 'settings' });
+const storage = createMMKV({ id: 'settings' });
 
 const mmkvStorage = {
   getItem: (name: string) => storage.getString(name) ?? null,
   setItem: (name: string, value: string) => storage.set(name, value),
-  removeItem: (name: string) => storage.delete(name),
+  removeItem: (name: string) => { storage.remove(name); },
 };
 
 const DEFAULT_SETTINGS: AppSettings = {

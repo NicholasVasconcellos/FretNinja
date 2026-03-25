@@ -1,16 +1,16 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { MMKV } from 'react-native-mmkv';
+import { createMMKV } from 'react-native-mmkv';
 import type { ComboMastery, GuitarString, NoteCombo, QuestionResult } from '../types';
 import { getNoteAtFret } from '../constants/fretboard';
 import { updateComboMastery } from '../utils/scoring';
 
-const storage = new MMKV({ id: 'mastery' });
+const storage = createMMKV({ id: 'mastery' });
 
 const mmkvStorage = {
   getItem: (name: string) => storage.getString(name) ?? null,
   setItem: (name: string, value: string) => storage.set(name, value),
-  removeItem: (name: string) => storage.delete(name),
+  removeItem: (name: string) => { storage.remove(name); },
 };
 
 /** Create a unique key for a string+fret combo */
