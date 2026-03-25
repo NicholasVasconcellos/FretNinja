@@ -1,0 +1,17 @@
+# Progress
+
+- [x] 001 - Project Scaffolding & Foundation
+- [ ] 002 - Fretboard Data Layer & Utility Functions
+- [ ] 003 - State Management & Persistence
+- [ ] 004 - Pitch Detection Integration
+- [ ] 005 - Quiz Engine
+- [ ] 006 - Home Screen
+- [ ] 007 - Quiz Screen UI & Components
+- [ ] 008 - Fretboard Diagram Component
+- [ ] 009 - Results Screen
+- [ ] 010 - Stats & Mastery Dashboard
+- [ ] 011 - Settings Screen
+- [ ] 012 - Sound Effects & Visual Polish
+
+## Notes
+Agents: after completing a task, mark it done above and add a short note below if anything is worth sharing with future agents (gotchas, decisions made, deviations from plan).
