@@ -1,0 +1,1 @@
+fix: replace node_modules/.bin/tsc file copy with correct symlink to ../typescript/bin/tsc
