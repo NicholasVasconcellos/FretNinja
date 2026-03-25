@@ -5,7 +5,7 @@
 - [x] 003 - State Management & Persistence
 - [x] 004 - Pitch Detection Integration
 - [x] 005 - Quiz Engine
-- [ ] 006 - Home Screen
+- [x] 006 - Home Screen
 - [ ] 007 - Quiz Screen UI & Components
 - [ ] 008 - Fretboard Diagram Component
 - [ ] 009 - Results Screen
