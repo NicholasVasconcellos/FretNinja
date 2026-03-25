@@ -8,7 +8,7 @@
 - [x] 006 - Home Screen
 - [x] 007 - Quiz Screen UI & Components
 - [x] 008 - Fretboard Diagram Component
-- [ ] 009 - Results Screen
+- [x] 009 - Results Screen
 - [ ] 010 - Stats & Mastery Dashboard
 - [ ] 011 - Settings Screen
 - [ ] 012 - Sound Effects & Visual Polish
