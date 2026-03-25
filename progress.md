@@ -6,7 +6,7 @@
 - [x] 004 - Pitch Detection Integration
 - [x] 005 - Quiz Engine
 - [x] 006 - Home Screen
-- [ ] 007 - Quiz Screen UI & Components
+- [x] 007 - Quiz Screen UI & Components
 - [ ] 008 - Fretboard Diagram Component
 - [ ] 009 - Results Screen
 - [ ] 010 - Stats & Mastery Dashboard

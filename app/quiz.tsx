@@ -1,11 +1,151 @@
-import { View, Text, StyleSheet } from 'react-native';
-import { colors, typography, spacing } from '../constants/theme';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { colors, spacing, typography } from '../constants/theme';
+import { useQuizEngine } from '../hooks/useQuizEngine';
+import { usePitchDetection } from '../hooks/usePitchDetection';
+import { useSettingsStore } from '../stores/settingsStore';
+import { NotePrompt } from '../components/NotePrompt';
+import { TimerBar } from '../components/TimerBar';
+import { ScoreCounter } from '../components/ScoreCounter';
+import { PitchIndicator } from '../components/PitchIndicator';
+import { FeedbackOverlay } from '../components/FeedbackOverlay';
 
 export default function QuizScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const settings = useSettingsStore();
+  const quiz = useQuizEngine();
+  const pitch = usePitchDetection();
+
+  const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
+  const [timerRemaining, setTimerRemaining] = useState(settings.timerDurationSec);
+  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const prevResultsLenRef = useRef(0);
+  const hasNavigatedRef = useRef(false);
+
+  // Start round and mic on mount
+  useEffect(() => {
+    quiz.startRound();
+    pitch.start();
+    return () => {
+      pitch.stop();
+      quiz.abort();
+    };
+  }, []);
+
+  // Feed detected notes to the quiz engine
+  useEffect(() => {
+    if (pitch.detectedNote && quiz.status === 'active') {
+      quiz.submitDetectedNote(pitch.detectedNote);
+    }
+  }, [pitch.detectedNote]);
+
+  // Track feedback from new results
+  useEffect(() => {
+    const len = quiz.results.length;
+    if (len > prevResultsLenRef.current) {
+      const lastResult = quiz.results[len - 1];
+      setFeedback(lastResult.correct ? 'correct' : 'incorrect');
+      // Reset timer for next question
+      if (settings.timerEnabled) {
+        setTimerRemaining(settings.timerDurationSec);
+      }
+    }
+    prevResultsLenRef.current = len;
+  }, [quiz.results.length]);
+
+  // Clear feedback after delay
+  useEffect(() => {
+    if (!feedback) return;
+    const t = setTimeout(() => setFeedback(null), 800);
+    return () => clearTimeout(t);
+  }, [feedback]);
+
+  // UI timer (counts down each second for display)
+  useEffect(() => {
+    if (!settings.timerEnabled || quiz.status !== 'active') return;
+    setTimerRemaining(settings.timerDurationSec);
+
+    timerIntervalRef.current = setInterval(() => {
+      setTimerRemaining((prev) => {
+        if (prev <= 1) return 0;
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    };
+  }, [quiz.status, quiz.questionIndex, settings.timerEnabled, settings.timerDurationSec]);
+
+  // Navigate to results when round finishes
+  useEffect(() => {
+    if (quiz.status === 'finished' && quiz.roundResult && !hasNavigatedRef.current) {
+      hasNavigatedRef.current = true;
+      router.replace('/results');
+    }
+  }, [quiz.status, quiz.roundResult]);
+
+  const correctCount = quiz.results.filter((r) => r.correct).length;
+
+  const handleQuit = useCallback(() => {
+    quiz.abort();
+    pitch.stop();
+    router.back();
+  }, [quiz, pitch, router]);
+
+  // Waiting state
+  if (quiz.status === 'idle' || !quiz.currentPrompt) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <Text style={styles.loadingText}>Starting round…</Text>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Quiz</Text>
-      <Text style={styles.subtitle}>Play the note shown</Text>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Header: quit button + score */}
+      <View style={styles.header}>
+        <Pressable onPress={handleQuit} hitSlop={12}>
+          <Text style={styles.quitText}>✕ Quit</Text>
+        </Pressable>
+      </View>
+
+      <ScoreCounter
+        current={quiz.questionIndex}
+        total={quiz.totalQuestions}
+        correct={correctCount}
+      />
+
+      {/* Timer bar */}
+      {settings.timerEnabled && (
+        <TimerBar remaining={timerRemaining} total={settings.timerDurationSec} />
+      )}
+
+      {/* Note prompt */}
+      <View style={styles.promptArea}>
+        <NotePrompt prompt={quiz.currentPrompt} />
+      </View>
+
+      {/* Pitch indicator + mic status */}
+      <View style={styles.bottomArea}>
+        <PitchIndicator
+          detectedNote={pitch.detectedNote}
+          frequency={pitch.frequency}
+        />
+        <View style={styles.micStatus}>
+          <View style={[styles.micDot, pitch.isListening && styles.micDotActive]} />
+          <Text style={styles.micLabel}>
+            {pitch.isListening ? 'Listening' : 'Mic off'}
+          </Text>
+        </View>
+      </View>
+
+      {/* Feedback overlay */}
+      <FeedbackOverlay type={feedback} />
     </View>
   );
 }
@@ -14,17 +154,50 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.lg,
   },
-  title: {
-    ...typography.heading,
-    color: colors.neonGreen,
-    marginBottom: spacing.sm,
-  },
-  subtitle: {
+  loadingText: {
     ...typography.body,
     color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 100,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+  },
+  quitText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: colors.textMuted,
+  },
+  promptArea: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bottomArea: {
+    alignItems: 'center',
+    paddingBottom: spacing.xxl,
+  },
+  micStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.sm,
+  },
+  micDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.textMuted,
+    marginRight: spacing.xs,
+  },
+  micDotActive: {
+    backgroundColor: colors.neonGreen,
+  },
+  micLabel: {
+    fontSize: 12,
+    color: colors.textMuted,
   },
 });
