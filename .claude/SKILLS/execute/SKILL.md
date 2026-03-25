@@ -12,7 +12,7 @@ disable-model-invocation: true
 3. Implement the task according to its steps and acceptance criteria.
 4. Verify all acceptance criteria are met. Run `npx tsc --noEmit` to catch type errors.
 5. Update `progress.md`: mark the task `- [x]` and add a brief note if relevant. Notes should be concise — only include what subsequent agents need to know.
-6. Git commit all changes (including `progress.md`) with message: `task $TASK_NUM: $TASK_TITLE`. Do not include "Co-Authored-By" in the commit.
+6. Git commit all changes (including `progress.md`) with message: `task $TASK_NUM: $TASK_TITLE` and a consise explanation of all changes made, sacrifice grammar for the sake of concision. Do not include "Co-Authored-By" in the commit.
 
 ## Rules
 
