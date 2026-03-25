@@ -10,7 +10,7 @@
 - [x] 008 - Fretboard Diagram Component
 - [x] 009 - Results Screen
 - [x] 010 - Stats & Mastery Dashboard
-- [ ] 011 - Settings Screen
+- [x] 011 - Settings Screen
 - [ ] 012 - Sound Effects & Visual Polish
 
 ## Notes

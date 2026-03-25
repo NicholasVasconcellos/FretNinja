@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { createMMKV } from 'react-native-mmkv';
-import type { AppSettings, GuitarString } from '../types';
+import type { AppSettings, GuitarString, StringLabelStyle } from '../types';
 
 const storage = createMMKV({ id: 'settings' });
 
@@ -21,6 +21,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   soundEnabled: true,
   smartWeighting: true,
   showFretboardAfterAnswer: true,
+  stringLabelStyle: 'number' as StringLabelStyle,
 };
 
 interface SettingsStore extends AppSettings {

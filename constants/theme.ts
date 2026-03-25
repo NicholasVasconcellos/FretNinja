@@ -33,3 +33,9 @@ export const spacing = {
   xl: 32,
   xxl: 48,
 } as const;
+
+export const borderRadius = {
+  sm: 8,
+  md: 12,
+  lg: 16,
+} as const;

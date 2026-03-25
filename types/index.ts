@@ -55,6 +55,9 @@ export interface ComboMastery {
   streak: number;
 }
 
+/** How guitar strings are labeled in the UI */
+export type StringLabelStyle = 'number' | 'name';
+
 /** App-wide settings */
 export interface AppSettings {
   questionsPerRound: number;
@@ -66,4 +69,5 @@ export interface AppSettings {
   soundEnabled: boolean;
   smartWeighting: boolean;
   showFretboardAfterAnswer: boolean;
+  stringLabelStyle: StringLabelStyle;
 }
