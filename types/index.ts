@@ -64,4 +64,5 @@ export interface AppSettings {
   timerEnabled: boolean;
   timerDurationSec: number;
   soundEnabled: boolean;
+  smartWeighting: boolean;
 }

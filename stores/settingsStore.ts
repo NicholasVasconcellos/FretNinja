@@ -19,6 +19,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   timerEnabled: false,
   timerDurationSec: 10,
   soundEnabled: true,
+  smartWeighting: true,
 };
 
 interface SettingsStore extends AppSettings {

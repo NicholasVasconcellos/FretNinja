@@ -4,7 +4,7 @@
 - [x] 002 - Fretboard Data Layer & Utility Functions
 - [x] 003 - State Management & Persistence
 - [x] 004 - Pitch Detection Integration
-- [ ] 005 - Quiz Engine
+- [x] 005 - Quiz Engine
 - [ ] 006 - Home Screen
 - [ ] 007 - Quiz Screen UI & Components
 - [ ] 008 - Fretboard Diagram Component
