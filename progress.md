@@ -1,7 +1,7 @@
 # Progress
 
 - [x] 001 - Project Scaffolding & Foundation
-- [ ] 002 - Fretboard Data Layer & Utility Functions
+- [x] 002 - Fretboard Data Layer & Utility Functions
 - [ ] 003 - State Management & Persistence
 - [ ] 004 - Pitch Detection Integration
 - [ ] 005 - Quiz Engine
