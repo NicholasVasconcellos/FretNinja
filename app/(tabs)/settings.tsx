@@ -8,6 +8,7 @@ import {
   Switch,
   Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, typography, spacing, borderRadius } from '../../constants/theme';
 import { useSettingsStore } from '../../stores/settingsStore';
 import type { StringLabelStyle } from '../../types';
@@ -276,6 +277,7 @@ const tr = StyleSheet.create({
    ══════════════════════════════════════════════════════════ */
 
 export default function SettingsScreen() {
+  const insets = useSafeAreaInsets();
   const {
     questionsPerRound,
     minFret,
@@ -315,9 +317,10 @@ export default function SettingsScreen() {
   );
 
   return (
+    <View style={[s.safeTop, { paddingTop: insets.top }]}>
     <ScrollView
       style={s.scroll}
-      contentContainerStyle={s.content}
+      contentContainerStyle={[s.content, { paddingTop: spacing.lg }]}
       showsVerticalScrollIndicator={false}
     >
       {/* ── Quiz ──────────────────────────────────── */}
@@ -402,15 +405,19 @@ export default function SettingsScreen() {
         <Text style={s.resetTxt}>Reset to Defaults</Text>
       </TouchableOpacity>
     </ScrollView>
+    </View>
   );
 }
 
 /* ── screen styles ─────────────────────────────────────── */
 
 const s = StyleSheet.create({
-  scroll: {
+  safeTop: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  scroll: {
+    flex: 1,
   },
   content: {
     paddingHorizontal: spacing.lg,

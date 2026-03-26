@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, typography, spacing } from '../../constants/theme';
 import { useMasteryData } from '../../hooks/useMasteryData';
 import MasteryGrid from '../../components/MasteryGrid';
@@ -52,6 +53,7 @@ function EmptyState() {
 }
 
 export default function StatsScreen() {
+  const insets = useSafeAreaInsets();
   const {
     totalRounds,
     totalAttempts,
@@ -64,7 +66,7 @@ export default function StatsScreen() {
   const hasData = totalRounds > 0;
 
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.lg }]}>
       <Text style={styles.title}>Mastery</Text>
 
       {!hasData ? (

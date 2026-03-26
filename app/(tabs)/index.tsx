@@ -1,12 +1,14 @@
 import { useEffect, useRef } from 'react';
 import { View, Text, Pressable, StyleSheet, Animated, Easing } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, typography, spacing, glow } from '../../constants/theme';
 import { useMasteryData } from '../../hooks/useMasteryData';
 import { RoundLengthPicker } from '../../components/RoundLengthPicker';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { totalRounds, overallAccuracy } = useMasteryData();
   const hasPlayed = totalRounds > 0;
 
@@ -74,7 +76,7 @@ export default function HomeScreen() {
   });
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Branding */}
       <Animated.View style={[
         styles.brandingArea,
