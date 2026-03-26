@@ -1,7 +1,5 @@
-Fix the Sound Recognition
-* Try react different react native tools:
-
-AVFoundation/AudioRecord via native modules
+* Swipe left and right to change between tabs (scroll animation is gradual)
+* Android build Test
 
 
 
