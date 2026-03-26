@@ -8,17 +8,25 @@ disable-model-invocation: true
 ## Task Execution Steps
 
 1. The task file is already in context (attached via `@`). Parse it for steps, acceptance criteria, and "Files to Touch."
-2. Read **only** the files listed in "Files to Touch" — these are the files you will read AND write. Do NOT read any other files. Do NOT explore the codebase, scan directories, or read files outside this list. If you hit an import error or missing type, read only the specific file needed to resolve it, then stop exploring.
+2. Read **only** the files listed in "Files to Touch" — these are the files you will read AND write. Do NOT explore the codebase or scan directories. If you hit an import error, missing type, or incomplete definition, you may read the **direct dependency** (e.g., an `#include`d header, an imported module) needed to resolve it — then stop. Do not read beyond one hop.
 3. Implement the task according to its steps and acceptance criteria.
-4. Verify all acceptance criteria are met. Run `npx tsc --noEmit` to catch type errors.
-5. Update `progress.md`: mark the task `- [x]` and add a brief note if relevant. Notes should be concise — only include what subsequent agents need to know.
-6. If successfull, Git commit all changes (including `progress.md`) with message: `task $TASK_NUM: $TASK_TITLE` and a consise explanation of all changes made, sacrifice grammar for the sake of concision. Do not include "Co-Authored-By" in the commit.
+4. Verify all acceptance criteria are met:
+   - Run `npx tsc --noEmit` to catch TypeScript type errors.
+   - For tasks touching `modules/pitch-detector/cpp/`: verify C++ compiles by running `clang++ -std=c++17 -fsyntax-only <changed .cpp files>` (syntax check only, no link).
+5. Atomically update progress and commit:
+   - Stage all changed files including `progress.md`.
+   - Update `progress.md`: mark the task `- [x]` and add a brief note if relevant. Notes should be concise — only include what subsequent agents need to know.
+   - Git commit **all** staged changes (code + `progress.md`) in a single commit with message: `task $TASK_NUM: $TASK_TITLE` and a concise explanation of all changes made. Do not include "Co-Authored-By" in the commit.
+   - If the commit fails, do not leave `progress.md` updated without a corresponding code commit.
+6. After committing, verify the working tree is clean with `git status --porcelain`. If dirty, something was missed — fix it.
 
 ## Rules
 
-**Do NOT read the codebase.** You have everything you need in the task file, the "Files to Touch" list, and the project context below. Resist any urge to "understand the project first" — that is out of scope. Only read a file outside the list if a build/type error forces you to, and read only that one file.
+**Do NOT read the codebase.** You have everything you need in the task file, the "Files to Touch" list, and the project context below. Resist any urge to "understand the project first" — that is out of scope. The one exception: you may read a direct dependency file (one hop) if a build or type error forces you to.
 
-One task per invocation. Stay focused on the current task's scope. Do not work ahead or modify files outside the task's scope unless required to complete it.
+**Do NOT modify files outside the task's "Files to Touch" list** unless a build error requires it. If you must touch an unlisted file, note it in your progress.md entry.
+
+One task per invocation. Stay focused on the current task's scope. Do not work ahead.
 
 Tasks 013–021 include an `<!-- Agent Context -->` HTML comment at the top with DSP constants (sample rate, frame size, YIN threshold, frequency range) and tech stack context. Use these values as authoritative when implementing.
 

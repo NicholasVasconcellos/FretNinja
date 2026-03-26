@@ -3,23 +3,53 @@ set -e
 
 TASKS_DIR="tasks"
 PROGRESS="progress.md"
+TASK_TIMEOUT="30m"
+MAX_RETRIES=1
 
-# Get all task files sorted numerically
-TASK_FILES=$(ls "$TASKS_DIR"/*.md 2>/dev/null | sort -t/ -k2 -V)
+# --- Input validation ---
+if [ ! -d "$TASKS_DIR" ]; then
+  echo "!! Tasks directory '$TASKS_DIR' does not exist."
+  exit 1
+fi
 
-if [ -z "$TASK_FILES" ]; then
+if [ ! -f "$PROGRESS" ]; then
+  echo "!! Progress file '$PROGRESS' does not exist."
+  exit 1
+fi
+
+# --- Cleanup trap: reset uncommitted changes on failure ---
+cleanup_on_failure() {
+  local exit_code=$?
+  if [ $exit_code -ne 0 ]; then
+    echo ""
+    echo "!! Script exited with status $exit_code. Resetting uncommitted changes."
+    git checkout . 2>/dev/null || true
+    git clean -fd 2>/dev/null || true
+  fi
+}
+trap cleanup_on_failure EXIT
+
+# --- Collect task files via globbing (safe for spaces) ---
+TASK_FILES=()
+for f in "$TASKS_DIR"/*.md; do
+  [ -e "$f" ] && TASK_FILES+=("$f")
+done
+
+if [ ${#TASK_FILES[@]} -eq 0 ]; then
   echo "No task files found in $TASKS_DIR/"
   exit 1
 fi
 
-FAILED=0
+# Sort numerically by filename
+IFS=$'\n' TASK_FILES=($(printf '%s\n' "${TASK_FILES[@]}" | sort -V)); unset IFS
 
-for TASK_FILE in $TASK_FILES; do
+for TASK_FILE in "${TASK_FILES[@]}"; do
   TASK_NUM=$(basename "$TASK_FILE" .md)
-  TASK_TITLE=$(head -1 "$TASK_FILE" | sed 's/^# Task [0-9]*: //')
+  # Extract title from first "# Task NNN:" heading (may not be line 1 due to HTML comments)
+  TASK_TITLE=$(grep -m1 '^# Task [0-9]' "$TASK_FILE" | sed 's/^#[[:space:]]*Task [0-9]*:[[:space:]]*//' || echo "Unknown")
 
-  # Check if already done in progress.md
-  if grep -q "\[x\] $TASK_NUM" "$PROGRESS" 2>/dev/null; then
+  # Check if already done — trailing space prevents "01" matching "010"
+  if grep -q "^- \[x\] ${TASK_NUM} " "$PROGRESS" 2>/dev/null; then
     echo "-- Task $TASK_NUM already complete, skipping."
     continue
   fi
@@ -30,17 +60,41 @@ for TASK_FILE in $TASK_FILES; do
   echo "========================================"
   echo ""
 
-  # Run the agent — prompt is just the skill invocation, the skill handles the rest
-  if ! claude --dangerously-skip-permissions -p "/execute @tasks/$TASK_NUM.md"; then
+  # Run the agent with timeout and retry
+  ATTEMPT=0
+  SUCCESS=false
+  while [ $ATTEMPT -le $MAX_RETRIES ]; do
+    if [ $ATTEMPT -gt 0 ]; then
+      echo "** Retrying task $TASK_NUM (attempt $((ATTEMPT + 1))/$((MAX_RETRIES + 1)))..."
+      git checkout . 2>/dev/null || true
+    fi
+
+    if timeout "$TASK_TIMEOUT" claude --dangerously-skip-permissions -p "/execute @tasks/$TASK_NUM.md"; then
+      SUCCESS=true
+      break
+    fi
+
+    echo "!! Task $TASK_NUM: attempt $((ATTEMPT + 1)) failed."
+    ATTEMPT=$((ATTEMPT + 1))
+  done
+
+  if [ "$SUCCESS" = false ]; then
     echo ""
-    echo "!! Task $TASK_NUM: claude exited with non-zero status. Stopping."
+    echo "!! Task $TASK_NUM: all attempts exhausted. Stopping."
     exit 1
   fi
 
-  # Verify the agent actually marked the task complete
-  if ! grep -q "\[x\] $TASK_NUM" "$PROGRESS" 2>/dev/null; then
+  # Verify the agent marked the task complete
+  if ! grep -q "^- \[x\] ${TASK_NUM} " "$PROGRESS" 2>/dev/null; then
     echo ""
     echo "!! Task $TASK_NUM: agent finished but did not mark task complete in progress.md. Stopping."
+    exit 1
+  fi
+
+  # Verify working tree is clean (agent should have committed)
+  if [ -n "$(git status --porcelain)" ]; then
+    echo ""
+    echo "!! Task $TASK_NUM: working tree is dirty after agent run. Uncommitted changes detected. Stopping."
     exit 1
   fi
 
@@ -48,9 +102,7 @@ for TASK_FILE in $TASK_FILES; do
   echo "** Task $TASK_NUM complete."
 done
 
-if [ "$FAILED" -eq 0 ]; then
-  echo ""
-  echo "========================================"
-  echo "All tasks complete!"
-  echo "========================================"
-fi
+echo ""
+echo "========================================"
+echo "All tasks complete!"
+echo "========================================"
