@@ -15,5 +15,12 @@ Pod::Spec.new do |s|
 
   s.dependency 'ExpoModulesCore'
 
-  s.source_files = '**/*.{h,m,mm,swift,hpp,cpp}'
+  s.source_files = ['**/*.{h,m,mm,swift,hpp,cpp}', '../cpp/*.{h,hpp,cpp}']
+  s.exclude_files = '../cpp/test_harness.cpp'
+  s.public_header_files = 'PitchDetectorBridge.h'
+
+  s.pod_target_xcconfig = {
+    'HEADER_SEARCH_PATHS' => '"${PODS_TARGET_SRCROOT}/../cpp"',
+    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17'
+  }
 end

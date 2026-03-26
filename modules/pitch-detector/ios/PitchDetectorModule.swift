@@ -1,23 +1,27 @@
 import ExpoModulesCore
 
 public class PitchDetectorModule: Module {
-  public func definition() -> ModuleDefinition {
-    Name("PitchDetector")
+    private lazy var audioCaptureManager = AudioCaptureManager()
 
-    Function("start") {
-      // Stub — will be implemented in task 016
-    }
+    public func definition() -> ModuleDefinition {
+        Name("PitchDetector")
 
-    Function("stop") {
-      // Stub — will be implemented in task 016
-    }
+        AsyncFunction("start") { (promise: Promise) in
+            self.audioCaptureManager.start { error in
+                if let error = error {
+                    promise.reject("ERR_PITCH_START", error.localizedDescription)
+                } else {
+                    promise.resolve(nil)
+                }
+            }
+        }
 
-    Function("getLatestPitch") { () -> [String: Any] in
-      return [
-        "frequency": 440.0,
-        "note": "A4",
-        "confidence": 0.0
-      ]
+        Function("stop") {
+            self.audioCaptureManager.stop()
+        }
+
+        Function("getLatestPitch") { () -> [String: Any] in
+            return PitchDetectorBridge.shared().getLatestPitch() as [String: Any]
+        }
     }
-  }
 }

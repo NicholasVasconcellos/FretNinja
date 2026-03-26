@@ -15,7 +15,7 @@
 - [x] 013 - Audit Current Pitch Detection Implementation
 - [x] 014 - Scaffold Expo Native Module
 - [x] 015 - C++ DSP Core (YIN + Note Mapper)
-- [ ] 016 - iOS Audio Capture with AVAudioEngine
+- [x] 016 - iOS Audio Capture with AVAudioEngine
 - [ ] 017 - Android Audio Capture with Oboe
 - [ ] 018 - JSI TurboModule Binding & TypeScript API
 - [ ] 019 - Signal Smoothing, Edge Cases & Latency Validation
@@ -29,3 +29,4 @@ Agents: after completing a task, mark it done above and add a short note below i
 - **expo-av → expo-audio**: Replaced `expo-av` with `expo-audio` for SDK 55 compatibility.
 - **Suppress pod warnings**: Added `inhibit_all_warnings!` to the Podfile to suppress ~3000 Swift concurrency/Sendable and deprecated API warnings coming from Expo/RN dependencies. Run `pod install` from `ios/` after the change. Your own code warnings still show normally.
 - **014 — Expo module autolinking**: Added `expo.autolinking.nativeModulesDir` to `package.json` (unlisted file) to enable autolinking for local modules in `modules/`. The iOS side requires a podspec at `modules/pitch-detector/ios/PitchDetector.podspec`. The plugin `tsconfig.json` needs `noEmit: false` to override the expo base config. Android `build.gradle` configures CMake with C++17 and a stub `stub.cpp` until task 015 adds real sources. Import `requireNativeModule` from `"expo"` (not `"expo-modules-core"`) per SDK 55 docs. Only apply `org.jetbrains.kotlin.android` in build.gradle (not the redundant `kotlin-android` alias).
+- **016 — iOS audio capture**: Updated podspec to include `../cpp/` sources with `public_header_files` limited to `PitchDetectorBridge.h` (keeps C++ headers out of the Swift umbrella). Audio session checks for existing `.playAndRecord` category before reconfiguring (expo-audio coexistence). `start()` is now `AsyncFunction` (returns Promise) — TS type in `PitchDetectorModule.ts` still says `void`, needs updating in task 018.
