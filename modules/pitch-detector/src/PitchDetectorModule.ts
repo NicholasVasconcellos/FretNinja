@@ -1,13 +1,9 @@
 import { requireNativeModule } from "expo";
 
-export interface PitchResult {
-  frequency: number;
-  note: string;
-  confidence: number;
-}
+import type { PitchResult } from "./types";
 
 interface PitchDetectorModuleType {
-  start(): void;
+  start(): Promise<void>;
   stop(): void;
   getLatestPitch(): PitchResult;
 }

@@ -17,7 +17,7 @@
 - [x] 015 - C++ DSP Core (YIN + Note Mapper)
 - [x] 016 - iOS Audio Capture with AVAudioEngine
 - [x] 017 - Android Audio Capture with Oboe
-- [ ] 018 - JSI TurboModule Binding & TypeScript API
+- [x] 018 - JSI TurboModule Binding & TypeScript API
 - [ ] 019 - Signal Smoothing, Edge Cases & Latency Validation
 - [ ] 020 - Testing Suite & Module Documentation
 - [ ] 021 - Swap Old Pitch Detection for New Module
