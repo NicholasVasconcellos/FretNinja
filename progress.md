@@ -14,7 +14,7 @@
 - [x] 012 - Sound Effects & Visual Polish
 - [x] 013 - Audit Current Pitch Detection Implementation
 - [x] 014 - Scaffold Expo Native Module
-- [ ] 015 - C++ DSP Core (YIN + Note Mapper)
+- [x] 015 - C++ DSP Core (YIN + Note Mapper)
 - [ ] 016 - iOS Audio Capture with AVAudioEngine
 - [ ] 017 - Android Audio Capture with Oboe
 - [ ] 018 - JSI TurboModule Binding & TypeScript API
