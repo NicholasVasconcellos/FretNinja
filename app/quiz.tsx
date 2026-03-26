@@ -32,8 +32,8 @@ export default function QuizScreen() {
   // Start round, mic, and preload sounds on mount
   useEffect(() => {
     quiz.startRound();
-    pitch.start();
-    loadSounds();
+    // Configure audio session (with recording support) before starting pitch detection
+    loadSounds().then(() => pitch.start());
     return () => {
       pitch.stop();
       quiz.abort();

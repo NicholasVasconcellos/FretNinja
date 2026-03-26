@@ -15,6 +15,9 @@ export async function loadSounds(): Promise<void> {
     await setAudioModeAsync({
       playsInSilentMode: true,
       interruptionMode: 'duckOthers',
+      allowsRecording: true,
+      shouldPlayInBackground: false,
+      shouldRouteThroughEarpiece: false,
     });
     correctPlayer = createAudioPlayer(CORRECT_SFX);
     wrongPlayer = createAudioPlayer(WRONG_SFX);
