@@ -13,7 +13,7 @@
 - [x] 011 - Settings Screen
 - [x] 012 - Sound Effects & Visual Polish
 - [x] 013 - Audit Current Pitch Detection Implementation
-- [ ] 014 - Scaffold Expo Native Module
+- [x] 014 - Scaffold Expo Native Module
 - [ ] 015 - C++ DSP Core (YIN + Note Mapper)
 - [ ] 016 - iOS Audio Capture with AVAudioEngine
 - [ ] 017 - Android Audio Capture with Oboe
@@ -28,3 +28,4 @@ Agents: after completing a task, mark it done above and add a short note below i
 - **react-native-permissions fix**: `react-native-pitch-detector` depends on `react-native-permissions`, which requires `setup_permissions(['Microphone'])` in the Podfile. Since `ios/` is gitignored (managed by Expo), a custom config plugin (`plugins/withMicrophonePermission.js`) was added to inject this automatically during `expo prebuild`. The Podfile must also `require` the `react-native-permissions/scripts/setup.rb` script before calling `setup_permissions` — without this require, the function is undefined and the Microphone handler source files are never compiled into the pod, causing the runtime crash "No permission handler detected" at `RNPermissionsModule.mm:207`.
 - **expo-av → expo-audio**: Replaced `expo-av` with `expo-audio` for SDK 55 compatibility.
 - **Suppress pod warnings**: Added `inhibit_all_warnings!` to the Podfile to suppress ~3000 Swift concurrency/Sendable and deprecated API warnings coming from Expo/RN dependencies. Run `pod install` from `ios/` after the change. Your own code warnings still show normally.
+- **014 — Expo module autolinking**: Added `expo.autolinking.nativeModulesDir` to `package.json` (unlisted file) to enable autolinking for local modules in `modules/`. The iOS side requires a podspec at `modules/pitch-detector/ios/PitchDetector.podspec`. The plugin `tsconfig.json` needs `noEmit: false` to override the expo base config. Android `build.gradle` configures CMake with C++17 and a stub `stub.cpp` until task 015 adds real sources. Import `requireNativeModule` from `"expo"` (not `"expo-modules-core"`) per SDK 55 docs. Only apply `org.jetbrains.kotlin.android` in build.gradle (not the redundant `kotlin-android` alias).

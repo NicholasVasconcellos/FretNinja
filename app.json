@@ -46,7 +46,8 @@
     "plugins": [
       "expo-router",
       "expo-audio",
-      "./plugins/withMicrophonePermission"
+      "./plugins/withMicrophonePermission",
+      "./modules/pitch-detector/plugin/build/index"
     ]
   }
 }
