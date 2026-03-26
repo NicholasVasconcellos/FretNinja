@@ -1,55 +1,46 @@
-import { Audio } from 'expo-av';
-import type { AVPlaybackSource } from 'expo-av';
+import { createAudioPlayer, setAudioModeAsync, AudioPlayer } from 'expo-audio';
 
 /* eslint-disable @typescript-eslint/no-var-requires */
-const CORRECT_SFX: AVPlaybackSource = require('../assets/sounds/correct.wav');
-const WRONG_SFX: AVPlaybackSource = require('../assets/sounds/wrong.wav');
+const CORRECT_SFX = require('../assets/sounds/correct.wav');
+const WRONG_SFX = require('../assets/sounds/wrong.wav');
 
-let correctSound: Audio.Sound | null = null;
-let wrongSound: Audio.Sound | null = null;
+let correctPlayer: AudioPlayer | null = null;
+let wrongPlayer: AudioPlayer | null = null;
 let loaded = false;
 
 /** Pre-load both SFX into memory. Safe to call multiple times. */
 export async function loadSounds(): Promise<void> {
   if (loaded) return;
   try {
-    await Audio.setAudioModeAsync({
-      playsInSilentModeIOS: true,
-      shouldDuckAndroid: true,
+    await setAudioModeAsync({
+      playsInSilentMode: true,
+      interruptionMode: 'duckOthers',
     });
-    const [c, w] = await Promise.all([
-      Audio.Sound.createAsync(CORRECT_SFX, { shouldPlay: false, volume: 0.8 }),
-      Audio.Sound.createAsync(WRONG_SFX, { shouldPlay: false, volume: 0.7 }),
-    ]);
-    correctSound = c.sound;
-    wrongSound = w.sound;
+    correctPlayer = createAudioPlayer(CORRECT_SFX);
+    wrongPlayer = createAudioPlayer(WRONG_SFX);
+    correctPlayer.volume = 0.8;
+    wrongPlayer.volume = 0.7;
     loaded = true;
   } catch {
     // Sounds are non-critical — fail silently
   }
 }
 
-async function replay(sound: Audio.Sound | null): Promise<void> {
-  if (!sound) return;
+async function replay(player: AudioPlayer | null): Promise<void> {
+  if (!player) return;
   try {
-    await sound.setPositionAsync(0);
-    await sound.playAsync();
+    await player.seekTo(0);
+    player.play();
   } catch {
     // ignore playback errors
   }
 }
 
-export const playCorrectSound = () => replay(correctSound);
-export const playWrongSound = () => replay(wrongSound);
+export const playCorrectSound = () => replay(correctPlayer);
+export const playWrongSound = () => replay(wrongPlayer);
 
 export async function unloadSounds(): Promise<void> {
-  try {
-    await correctSound?.unloadAsync();
-    await wrongSound?.unloadAsync();
-  } catch {
-    // ignore
-  }
-  correctSound = null;
-  wrongSound = null;
+  correctPlayer = null;
+  wrongPlayer = null;
   loaded = false;
 }
