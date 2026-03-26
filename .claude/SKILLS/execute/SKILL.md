@@ -12,13 +12,15 @@ disable-model-invocation: true
 3. Implement the task according to its steps and acceptance criteria.
 4. Verify all acceptance criteria are met. Run `npx tsc --noEmit` to catch type errors.
 5. Update `progress.md`: mark the task `- [x]` and add a brief note if relevant. Notes should be concise — only include what subsequent agents need to know.
-6. Git commit all changes (including `progress.md`) with message: `task $TASK_NUM: $TASK_TITLE` and a consise explanation of all changes made, sacrifice grammar for the sake of concision. Do not include "Co-Authored-By" in the commit.
+6. If successfull, Git commit all changes (including `progress.md`) with message: `task $TASK_NUM: $TASK_TITLE` and a consise explanation of all changes made, sacrifice grammar for the sake of concision. Do not include "Co-Authored-By" in the commit.
 
 ## Rules
 
 **Do NOT read the codebase.** You have everything you need in the task file, the "Files to Touch" list, and the project context below. Resist any urge to "understand the project first" — that is out of scope. Only read a file outside the list if a build/type error forces you to, and read only that one file.
 
 One task per invocation. Stay focused on the current task's scope. Do not work ahead or modify files outside the task's scope unless required to complete it.
+
+Tasks 013–021 include an `<!-- Agent Context -->` HTML comment at the top with DSP constants (sample rate, frame size, YIN threshold, frequency range) and tech stack context. Use these values as authoritative when implementing.
 
 ## Project
 
@@ -31,10 +33,10 @@ A mobile app that helps guitarists memorize the fretboard by quizzing them on no
 - **Framework:** React Native (Expo, prebuild/bare workflow)
 - **Navigation:** Expo Router (file-based routing)
 - **Language:** TypeScript
-- **Pitch Detection:** Native module (react-native-pitch-detector or custom FFT/autocorrelation via native bridge)
+- **Pitch Detection:** `react-native-pitch-detector` (current); migrating to custom C++17 YIN-based Expo native module in `modules/pitch-detector/` (tasks 013–021)
 - **State Management:** Zustand
 - **Local Storage:** MMKV (react-native-mmkv)
-- **Audio/SFX:** expo-av
+- **Audio/SFX:** expo-audio (SDK 55+)
 - **Styling:** NativeWind / Tailwind or StyleSheet (dark + neon theme)
 
 ## Project Structure
@@ -51,6 +53,13 @@ app/
     settings.tsx           # Settings
 components/                # Reusable UI components
 hooks/                     # Custom hooks (pitch detection, quiz engine, mastery data)
+modules/
+  pitch-detector/          # Custom Expo native module (C++17 YIN, Swift/Kotlin)
+    cpp/                   # Shared C++ DSP (YIN, ring buffer, note mapper)
+    ios/                   # Swift + ObjC++ bridge (AVAudioEngine)
+    android/               # Kotlin + JNI (Oboe)
+    src/                   # TypeScript API (usePitchDetector hook)
+    plugin/                # Expo config plugin
 utils/                     # Pure logic (notes, scoring, weighted random, sounds)
 stores/                    # Zustand stores (settings, mastery, round state)
 constants/                 # Theme, fretboard data
