@@ -12,7 +12,7 @@
 - [x] 010 - Stats & Mastery Dashboard
 - [x] 011 - Settings Screen
 - [x] 012 - Sound Effects & Visual Polish
-- [ ] 013 - Audit Current Pitch Detection Implementation
+- [x] 013 - Audit Current Pitch Detection Implementation
 - [ ] 014 - Scaffold Expo Native Module
 - [ ] 015 - C++ DSP Core (YIN + Note Mapper)
 - [ ] 016 - iOS Audio Capture with AVAudioEngine
