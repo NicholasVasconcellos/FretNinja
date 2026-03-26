@@ -15,3 +15,6 @@
 
 ## Notes
 Agents: after completing a task, mark it done above and add a short note below if anything is worth sharing with future agents (gotchas, decisions made, deviations from plan).
+
+- **react-native-permissions fix**: `react-native-pitch-detector` depends on `react-native-permissions`, which requires `setup_permissions(['Microphone'])` in the Podfile. Since `ios/` is gitignored (managed by Expo), a custom config plugin (`plugins/withMicrophonePermission.js`) was added to inject this automatically during `expo prebuild`. Without it, the app crashes with "No permission handler detected" at `RNPermissionsModule.mm:207`.
+- **expo-av → expo-audio**: Replaced `expo-av` with `expo-audio` for SDK 55 compatibility.
