@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, typography } from '../constants/theme';
 import { useQuizEngine } from '../hooks/useQuizEngine';
-import { usePitchDetection } from '../hooks/usePitchDetection';
+import { usePitchDetector } from '../modules/pitch-detector/src';
 import { useSettingsStore } from '../stores/settingsStore';
 import { NotePrompt } from '../components/NotePrompt';
 import { TimerBar } from '../components/TimerBar';
@@ -20,7 +20,7 @@ export default function QuizScreen() {
   const insets = useSafeAreaInsets();
   const settings = useSettingsStore();
   const quiz = useQuizEngine();
-  const pitch = usePitchDetection();
+  const { pitch, status, start, stop } = usePitchDetector();
 
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
   const [lastCombo, setLastCombo] = useState<{ string: GuitarString; note: Note } | null>(null);
@@ -33,20 +33,23 @@ export default function QuizScreen() {
   useEffect(() => {
     quiz.startRound();
     // Configure audio session (with recording support) before starting pitch detection
-    loadSounds().then(() => pitch.start());
+    loadSounds().then(() => start());
     return () => {
-      pitch.stop();
+      stop();
       quiz.abort();
       unloadSounds();
     };
   }, []);
 
   // Feed detected notes to the quiz engine
+  const detectedNote = (pitch?.note as Note) ?? null;
+  const detectedFrequency = pitch?.frequency ?? null;
+
   useEffect(() => {
-    if (pitch.detectedNote && quiz.status === 'active') {
-      quiz.submitDetectedNote(pitch.detectedNote);
+    if (detectedNote && quiz.status === 'active') {
+      quiz.submitDetectedNote(detectedNote);
     }
-  }, [pitch.detectedNote]);
+  }, [detectedNote]);
 
   // Track feedback from new results — play sounds
   useEffect(() => {
@@ -108,9 +111,9 @@ export default function QuizScreen() {
 
   const handleQuit = useCallback(() => {
     quiz.abort();
-    pitch.stop();
+    stop();
     router.back();
-  }, [quiz, pitch, router]);
+  }, [quiz, stop, router]);
 
   // Waiting state
   if (quiz.status === 'idle' || !quiz.currentPrompt) {
@@ -159,13 +162,13 @@ export default function QuizScreen() {
       {/* Pitch indicator + mic status */}
       <View style={styles.bottomArea}>
         <PitchIndicator
-          detectedNote={pitch.detectedNote}
-          frequency={pitch.frequency}
+          detectedNote={detectedNote}
+          frequency={detectedFrequency}
         />
         <View style={styles.micStatus}>
-          <View style={[styles.micDot, pitch.isListening && styles.micDotActive]} />
+          <View style={[styles.micDot, status === 'active' && styles.micDotActive]} />
           <Text style={styles.micLabel}>
-            {pitch.isListening ? 'Listening' : 'Mic off'}
+            {status === 'active' ? 'Listening' : 'Mic off'}
           </Text>
         </View>
       </View>

@@ -20,7 +20,7 @@
 - [x] 018 - JSI TurboModule Binding & TypeScript API
 - [x] 019 - Signal Smoothing, Edge Cases & Latency Validation
 - [x] 020 - Testing Suite & Module Documentation
-- [ ] 021 - Swap Old Pitch Detection for New Module
+- [x] 021 - Swap Old Pitch Detection for New Module
 
 ## Notes
 Agents: after completing a task, mark it done above and add a short note below if anything is worth sharing with future agents (gotchas, decisions made, deviations from plan).
