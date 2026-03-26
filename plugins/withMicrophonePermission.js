@@ -12,7 +12,8 @@ function withMicrophonePermission(config) {
       );
       let podfile = fs.readFileSync(podfilePath, "utf8");
 
-      const setupCall = `setup_permissions([\n  'Microphone',\n])`;
+      const requireLine = `require File.join(File.dirname(\`node --print "require.resolve('react-native-permissions/package.json')"\`), "scripts/setup")`;
+      const setupCall = `${requireLine}\nsetup_permissions([\n  'Microphone',\n])`;
 
       if (!podfile.includes("setup_permissions")) {
         podfile = podfile.replace(
