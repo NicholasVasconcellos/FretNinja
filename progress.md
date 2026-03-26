@@ -19,7 +19,7 @@
 - [x] 017 - Android Audio Capture with Oboe
 - [x] 018 - JSI TurboModule Binding & TypeScript API
 - [x] 019 - Signal Smoothing, Edge Cases & Latency Validation
-- [ ] 020 - Testing Suite & Module Documentation
+- [x] 020 - Testing Suite & Module Documentation
 - [ ] 021 - Swap Old Pitch Detection for New Module
 
 ## Notes

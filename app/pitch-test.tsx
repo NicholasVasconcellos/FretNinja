@@ -9,9 +9,10 @@ import { colors, spacing } from "../constants/theme";
 export default function PitchTestScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { pitch, status, start, stop } = usePitchDetector({
+  const { pitch, status, start, stop, debug } = usePitchDetector({
     pollRate: 30,
     minConfidence: 0.85,
+    debug: true,
   });
 
   const logCountRef = useRef(0);
@@ -24,10 +25,18 @@ export default function PitchTestScreen() {
           `${pitch.note}${pitch.octave} ` +
           `freq=${pitch.frequency.toFixed(1)}Hz ` +
           `conf=${pitch.confidence.toFixed(3)} ` +
-          `cents=${pitch.cents > 0 ? "+" : ""}${pitch.cents.toFixed(1)}`
+          `cents=${pitch.cents > 0 ? "+" : ""}${pitch.cents.toFixed(1)}` +
+          (debug ? ` latency=${debug.latencyMs.toFixed(1)}ms` : "")
       );
     }
-  }, [pitch]);
+  }, [pitch, debug]);
+
+  const centsColor =
+    pitch && Math.abs(pitch.cents) <= 5
+      ? colors.neonGreen
+      : pitch && Math.abs(pitch.cents) <= 15
+        ? "#FFD700"
+        : colors.hotPink;
 
   return (
     <View
@@ -55,13 +64,29 @@ export default function PitchTestScreen() {
             <Text style={styles.frequency}>
               {pitch.frequency.toFixed(1)} Hz
             </Text>
-            <Text style={styles.detail}>
-              Confidence: {(pitch.confidence * 100).toFixed(1)}%
-            </Text>
-            <Text style={styles.detail}>
-              Cents: {pitch.cents > 0 ? "+" : ""}
-              {pitch.cents.toFixed(1)}
-            </Text>
+            <View style={styles.detailRow}>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Confidence</Text>
+                <Text style={styles.detailValue}>
+                  {(pitch.confidence * 100).toFixed(1)}%
+                </Text>
+              </View>
+              <View style={styles.detailItem}>
+                <Text style={styles.detailLabel}>Cents</Text>
+                <Text style={[styles.detailValue, { color: centsColor }]}>
+                  {pitch.cents > 0 ? "+" : ""}
+                  {pitch.cents.toFixed(1)}
+                </Text>
+              </View>
+              {debug && (
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Latency</Text>
+                  <Text style={styles.detailValue}>
+                    {debug.latencyMs.toFixed(1)} ms
+                  </Text>
+                </View>
+              )}
+            </View>
           </>
         ) : (
           <Text style={styles.placeholder}>
@@ -92,7 +117,9 @@ export default function PitchTestScreen() {
         </Pressable>
       </View>
 
-      <Text style={styles.hint}>Check console for live pitch logs</Text>
+      <Text style={styles.hint}>
+        Play a note to see live pitch data above
+      </Text>
     </View>
   );
 }
@@ -133,7 +160,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: 16,
     padding: spacing.xl,
-    minHeight: 180,
+    minHeight: 220,
     marginBottom: spacing.xl,
   },
   noteName: {
@@ -146,10 +173,23 @@ const styles = StyleSheet.create({
     fontSize: 22,
     marginTop: spacing.xs,
   },
-  detail: {
+  detailRow: {
+    flexDirection: "row",
+    marginTop: spacing.md,
+    gap: spacing.lg,
+  },
+  detailItem: {
+    alignItems: "center",
+  },
+  detailLabel: {
+    color: colors.textMuted,
+    fontSize: 12,
+    marginBottom: 2,
+  },
+  detailValue: {
     color: colors.textSecondary,
     fontSize: 16,
-    marginTop: spacing.xs,
+    fontWeight: "600",
   },
   placeholder: {
     color: colors.textSecondary,

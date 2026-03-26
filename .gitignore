@@ -4,3 +4,4 @@ dist/
 /ios/
 /android/
 /tmp/
+modules/pitch-detector/cpp/tests/build/
