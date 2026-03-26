@@ -1,5 +1,8 @@
 #include "OboeAudioCapture.h"
 #include <android/log.h>
+#include <chrono>
+#include <cstring>
+#include <algorithm>
 
 #define LOG_TAG "OboeAudioCapture"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -63,6 +66,12 @@ void OboeAudioCapture::stop() {
   }
 
   bufferedSamples_ = 0;
+
+  // Reset DSP state
+  yin_.reset();
+  highPass_.reset();
+  lastBufferTimestampNs_.store(0, std::memory_order_relaxed);
+
   LOGI("Audio capture stopped");
 }
 
@@ -72,16 +81,37 @@ void OboeAudioCapture::getLatestPitch(float& frequency, float& confidence,
   latestPitch_.load(frequency, confidence, cents, octave, noteName);
 }
 
+double OboeAudioCapture::getLatencyMs() {
+  int64_t ts = lastBufferTimestampNs_.load(std::memory_order_acquire);
+  if (ts == 0) return 0.0;
+  auto now = std::chrono::steady_clock::now();
+  int64_t nowNs = std::chrono::duration_cast<std::chrono::nanoseconds>(
+      now.time_since_epoch()).count();
+  return static_cast<double>(nowNs - ts) / 1e6;
+}
+
 oboe::DataCallbackResult OboeAudioCapture::onAudioReady(
     oboe::AudioStream* /*stream*/, void* audioData, int32_t numFrames) {
+  // Record timestamp for latency measurement
+  auto now = std::chrono::steady_clock::now();
+  lastBufferTimestampNs_.store(
+      std::chrono::duration_cast<std::chrono::nanoseconds>(
+          now.time_since_epoch()).count(),
+      std::memory_order_release);
+
   // Zero allocations in this callback — all buffers are preallocated
   const auto* input = static_cast<const float*>(audioData);
 
-  // Write incoming samples to the ring buffer
-  ringBuffer_.write(input, static_cast<size_t>(numFrames));
+  // Apply high-pass filter to remove DC offset and low-frequency rumble
+  int count = std::min(static_cast<int>(numFrames), 4096);
+  highPass_.process(input, filterBuffer_, count);
+  const float* filtered = filterBuffer_;
+
+  // Write filtered samples to the ring buffer
+  ringBuffer_.write(filtered, static_cast<size_t>(count));
 
   // Accumulate samples and run YIN when we have a full frame
-  int remaining = numFrames;
+  int remaining = count;
   int offset = 0;
 
   while (remaining > 0) {
@@ -89,7 +119,7 @@ oboe::DataCallbackResult OboeAudioCapture::onAudioReady(
     int toCopy = (remaining < needed) ? remaining : needed;
 
     for (int i = 0; i < toCopy; ++i) {
-      frameBuffer_[bufferedSamples_ + i] = input[offset + i];
+      frameBuffer_[bufferedSamples_ + i] = filtered[offset + i];
     }
 
     bufferedSamples_ += toCopy;

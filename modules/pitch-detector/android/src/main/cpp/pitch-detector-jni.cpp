@@ -53,4 +53,13 @@ Java_expo_modules_pitchdetector_PitchDetectorModule_nativeGetLatestPitch(
   return result;
 }
 
+JNIEXPORT jdouble JNICALL
+Java_expo_modules_pitchdetector_PitchDetectorModule_nativeGetLatencyMs(
+    JNIEnv* /*env*/, jobject /*thiz*/) {
+  if (g_capture) {
+    return static_cast<jdouble>(g_capture->getLatencyMs());
+  }
+  return 0.0;
+}
+
 } // extern "C"

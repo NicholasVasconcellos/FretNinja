@@ -6,6 +6,7 @@
 #include "ring_buffer.h"
 #include "yin.h"
 #include "note_mapper.h"
+#include "high_pass_filter.h"
 
 struct AtomicPitchData {
   std::atomic<float> frequency{0.0f};
@@ -53,6 +54,9 @@ public:
   void getLatestPitch(float& frequency, float& confidence, float& cents,
                       int& octave, char noteName[4]);
 
+  // Measure latency from last audio buffer arrival to now (in milliseconds)
+  double getLatencyMs();
+
   // oboe::AudioStreamCallback
   oboe::DataCallbackResult onAudioReady(
       oboe::AudioStream* stream, void* audioData, int32_t numFrames) override;
@@ -64,8 +68,11 @@ private:
   std::shared_ptr<oboe::AudioStream> stream_;
   RingBuffer ringBuffer_;
   YIN yin_;
+  HighPassFilter highPass_;
   float frameBuffer_[FRAME_SIZE];
+  float filterBuffer_[4096];
   int bufferedSamples_ = 0;
   AtomicPitchData latestPitch_;
   std::atomic<bool> running_{false};
+  std::atomic<int64_t> lastBufferTimestampNs_{0};
 };

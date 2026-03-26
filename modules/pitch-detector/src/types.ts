@@ -6,11 +6,16 @@ export interface PitchResult {
   cents: number;
 }
 
+export interface DebugInfo {
+  latencyMs: number;
+}
+
 export type PitchDetectorStatus = "idle" | "starting" | "active";
 
 export interface UsePitchDetectorOptions {
   pollRate?: number;
   minConfidence?: number;
+  debug?: boolean;
 }
 
 export interface UsePitchDetectorReturn {
@@ -18,4 +23,5 @@ export interface UsePitchDetectorReturn {
   status: PitchDetectorStatus;
   start: () => Promise<void>;
   stop: () => void;
+  debug: DebugInfo | null;
 }

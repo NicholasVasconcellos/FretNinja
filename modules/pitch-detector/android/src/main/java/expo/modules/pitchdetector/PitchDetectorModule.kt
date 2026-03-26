@@ -18,6 +18,7 @@ class PitchDetectorModule : Module() {
   private external fun nativeStart(): Boolean
   private external fun nativeStop()
   private external fun nativeGetLatestPitch(): FloatArray
+  private external fun nativeGetLatencyMs(): Double
 
   override fun definition() = ModuleDefinition {
     Name("PitchDetector")
@@ -69,6 +70,10 @@ class PitchDetectorModule : Module() {
         "note" to if (noteName.isNotEmpty()) "$noteName$octave" else "",
         "cents" to raw[2].toDouble()
       )
+    }
+
+    Function("getLatencyMs") {
+      nativeGetLatencyMs()
     }
   }
 }

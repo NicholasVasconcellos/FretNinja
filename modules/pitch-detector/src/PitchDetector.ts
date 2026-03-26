@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import PitchDetectorModule from "./PitchDetectorModule";
 import type {
+  DebugInfo,
   PitchDetectorStatus,
   PitchResult,
   UsePitchDetectorOptions,
@@ -13,9 +14,11 @@ export function usePitchDetector(
 ): UsePitchDetectorReturn {
   const pollRate = options?.pollRate ?? 30;
   const minConfidence = options?.minConfidence ?? 0.85;
+  const debugMode = options?.debug ?? false;
 
   const [pitch, setPitch] = useState<PitchResult | null>(null);
   const [status, setStatus] = useState<PitchDetectorStatus>("idle");
+  const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const statusRef = useRef<PitchDetectorStatus>("idle");
@@ -38,11 +41,19 @@ export function usePitchDetector(
         } else {
           setPitch(null);
         }
+
+        if (debugMode) {
+          const latencyMs = PitchDetectorModule.getLatencyMs();
+          setDebugInfo({ latencyMs });
+        }
       } catch {
         setPitch(null);
+        if (debugMode) {
+          setDebugInfo(null);
+        }
       }
     }, intervalMs);
-  }, [pollRate, minConfidence, stopPolling]);
+  }, [pollRate, minConfidence, debugMode, stopPolling]);
 
   const start = useCallback(async () => {
     if (statusRef.current !== "idle") return;
@@ -64,6 +75,7 @@ export function usePitchDetector(
     stopPolling();
     PitchDetectorModule.stop();
     setPitch(null);
+    setDebugInfo(null);
     setStatus("idle");
     statusRef.current = "idle";
   }, [stopPolling]);
@@ -81,5 +93,5 @@ export function usePitchDetector(
     };
   }, [stopPolling]);
 
-  return { pitch, status, start, stop };
+  return { pitch, status, start, stop, debug: debugMode ? debugInfo : null };
 }

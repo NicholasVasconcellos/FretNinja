@@ -9,6 +9,28 @@ YIN::YIN(float sample_rate, int frame_size, float threshold)
       diff_(frame_size / 2, 0.0f),
       cmnd_(frame_size / 2, 0.0f) {}
 
+void YIN::reset() {
+  ema_frequency_ = 0.0f;
+  ema_initialized_ = false;
+}
+
+float YIN::computeRMS(const float* buffer, int length) {
+  float sum = 0.0f;
+  for (int i = 0; i < length; ++i) {
+    sum += buffer[i] * buffer[i];
+  }
+  return std::sqrt(sum / static_cast<float>(length));
+}
+
+bool YIN::detectClipping(const float* buffer, int length) {
+  for (int i = 0; i < length; ++i) {
+    if (std::fabs(buffer[i]) >= CLIPPING_THRESHOLD) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void YIN::difference(const float* buffer, int length) {
   int len = half_size_;
   if (length < frame_size_) {
@@ -85,9 +107,19 @@ float YIN::parabolicInterpolation(int tau) {
 }
 
 PitchResult YIN::detect(const float* buffer, int length) {
-  PitchResult result = {0.0f, 0.0f};
+  PitchResult result{};
 
   if (length < frame_size_) {
+    return result;
+  }
+
+  // Edge case: clipping detection (flagged in result for callers to inspect)
+  result.clipping = detectClipping(buffer, length);
+
+  // Edge case: silence — skip YIN if signal is too quiet
+  if (computeRMS(buffer, length) < RMS_SILENCE_THRESHOLD) {
+    ema_frequency_ = 0.0f;
+    ema_initialized_ = false;
     return result;
   }
 
@@ -100,6 +132,8 @@ PitchResult YIN::detect(const float* buffer, int length) {
   // Step 3: Absolute threshold
   int tau = absoluteThreshold();
   if (tau == -1) {
+    ema_frequency_ = 0.0f;
+    ema_initialized_ = false;
     return result;
   }
 
@@ -109,7 +143,7 @@ PitchResult YIN::detect(const float* buffer, int length) {
   // Step 5: Convert to frequency
   float frequency = sample_rate_ / refined_tau;
 
-  // Clamp to valid range
+  // Edge case: frequency out of range (E2–C8)
   if (frequency < MIN_FREQUENCY || frequency > MAX_FREQUENCY) {
     return result;
   }
@@ -119,7 +153,31 @@ PitchResult YIN::detect(const float* buffer, int length) {
   if (confidence < 0.0f) confidence = 0.0f;
   if (confidence > 1.0f) confidence = 1.0f;
 
-  result.frequency = frequency;
+  // Low confidence: reset EMA to avoid stale smoothing
+  if (confidence < MIN_CONFIDENCE) {
+    ema_frequency_ = 0.0f;
+    ema_initialized_ = false;
+    result.frequency = frequency;
+    result.confidence = confidence;
+    return result;
+  }
+
+  // EMA smoothing
+  if (!ema_initialized_) {
+    ema_frequency_ = frequency;
+    ema_initialized_ = true;
+  } else {
+    // Reset EMA on rapid note change (>1 semitone jump between frames)
+    float ratio = frequency / ema_frequency_;
+    constexpr float SEMITONE_RATIO = 1.05946309f; // 2^(1/12)
+    if (ratio > SEMITONE_RATIO || ratio < 1.0f / SEMITONE_RATIO) {
+      ema_frequency_ = frequency;
+    } else {
+      ema_frequency_ = EMA_ALPHA * frequency + (1.0f - EMA_ALPHA) * ema_frequency_;
+    }
+  }
+
+  result.frequency = ema_frequency_;
   result.confidence = confidence;
   return result;
 }

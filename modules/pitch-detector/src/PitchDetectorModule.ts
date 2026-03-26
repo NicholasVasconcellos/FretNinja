@@ -6,6 +6,7 @@ interface PitchDetectorModuleType {
   start(): Promise<void>;
   stop(): void;
   getLatestPitch(): PitchResult;
+  getLatencyMs(): number;
 }
 
 const PitchDetectorModule =

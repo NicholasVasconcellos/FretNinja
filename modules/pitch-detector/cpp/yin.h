@@ -12,12 +12,24 @@ constexpr float MIN_FREQUENCY = 65.0f;
 constexpr float MAX_FREQUENCY = 4200.0f;
 constexpr float MIN_CONFIDENCE = 0.5f;
 
+// Signal processing constants
+constexpr float EMA_ALPHA = 0.35f;
+constexpr float RMS_SILENCE_THRESHOLD = 0.01f;
+constexpr float CLIPPING_THRESHOLD = 0.99f;
+
 class YIN {
 public:
   YIN(float sample_rate = SAMPLE_RATE, int frame_size = FRAME_SIZE,
       float threshold = YIN_THRESHOLD);
 
   PitchResult detect(const float* buffer, int length);
+
+  // Reset EMA smoothing state (call on stop/start)
+  void reset();
+
+  // Signal analysis utilities
+  static float computeRMS(const float* buffer, int length);
+  static bool detectClipping(const float* buffer, int length);
 
 private:
   float sample_rate_;
@@ -28,6 +40,10 @@ private:
   // Preallocated working buffers
   std::vector<float> diff_;
   std::vector<float> cmnd_;
+
+  // EMA smoothing state
+  float ema_frequency_ = 0.0f;
+  bool ema_initialized_ = false;
 
   void difference(const float* buffer, int length);
   void cumulativeMeanNormalizedDifference();

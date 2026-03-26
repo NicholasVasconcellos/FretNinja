@@ -15,6 +15,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// Reset internal state (ring buffer, frame buffer, latest result).
 - (void)reset;
 
+/// Measure latency from last audio buffer arrival to now (in milliseconds).
+- (double)getLatencyMs;
+
 @end
 
 NS_ASSUME_NONNULL_END

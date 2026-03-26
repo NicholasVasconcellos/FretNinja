@@ -23,5 +23,9 @@ public class PitchDetectorModule: Module {
         Function("getLatestPitch") { () -> [String: Any] in
             return PitchDetectorBridge.shared().getLatestPitch() as [String: Any]
         }
+
+        Function("getLatencyMs") { () -> Double in
+            return PitchDetectorBridge.shared().getLatencyMs()
+        }
     }
 }
