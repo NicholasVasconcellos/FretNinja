@@ -18,6 +18,15 @@
     float _frameBuffer[FRAME_SIZE];
     int _frameBufferCount;
 
+    // Debug counters
+    int _detectCallCount;
+    int _lastLoggedDetectCount;
+    std::atomic<int> _bufferCallCount;
+    std::atomic<float> _lastRms;
+
+    // Consecutive frames with no valid pitch — used to clear stale results
+    int _noPitchCount;
+
     // Pre-allocated buffer for high-pass filtering
     std::vector<float> _filterBuffer;
 
@@ -52,11 +61,29 @@
         _latestOctave = 0;
         _latestCents = 0;
         _lastBufferTimestampNs.store(0, std::memory_order_relaxed);
+        _bufferCallCount.store(0, std::memory_order_relaxed);
+        _lastRms.store(0.0f, std::memory_order_relaxed);
     }
     return self;
 }
 
+- (void)configureSampleRate:(float)sampleRate {
+    NSLog(@"[PitchDebug] configureSampleRate: %.0f Hz", sampleRate);
+    _yin = YIN(sampleRate, FRAME_SIZE, YIN_THRESHOLD);
+    _highPass = HighPassFilter(60.0f, sampleRate);
+}
+
 - (void)processAudioBuffer:(const float *)buffer frameCount:(uint32_t)frameCount {
+    _bufferCallCount.fetch_add(1, std::memory_order_relaxed);
+
+    // Compute RMS of incoming raw buffer for debug
+    float rawRms = 0.0f;
+    for (uint32_t i = 0; i < frameCount; ++i) {
+        rawRms += buffer[i] * buffer[i];
+    }
+    rawRms = std::sqrt(rawRms / static_cast<float>(frameCount));
+    _lastRms.store(rawRms, std::memory_order_relaxed);
+
     // Record timestamp for latency measurement
     auto now = std::chrono::steady_clock::now();
     _lastBufferTimestampNs.store(
@@ -81,11 +108,26 @@
 
         // Run YIN pitch detection (includes RMS silence check, EMA smoothing)
         PitchResult result = _yin.detect(_frameBuffer, FRAME_SIZE);
+        _detectCallCount++;
+
+        // Log every detection for first 10, then every 50th
+        if (_detectCallCount <= 10 || _detectCallCount % 50 == 0) {
+            float rms = YIN::computeRMS(_frameBuffer, FRAME_SIZE);
+            NSLog(@"[PitchDebug] detect #%d  rms=%.6f  freq=%.1f  conf=%.3f  clipping=%d",
+                  _detectCallCount, rms, result.frequency, result.confidence, result.clipping);
+        }
 
         if (result.confidence >= MIN_CONFIDENCE &&
             result.frequency >= MIN_FREQUENCY &&
             result.frequency <= MAX_FREQUENCY) {
+            _noPitchCount = 0;
             NoteInfo noteInfo = NoteMapper::mapToNote(result.frequency);
+
+            // Log every accepted detection
+            if (_detectCallCount <= 20 || _detectCallCount % 50 == 0) {
+                NSLog(@"[PitchDebug] ACCEPTED  note=%s%d  freq=%.1f  conf=%.3f  cents=%.1f",
+                      noteInfo.note.c_str(), noteInfo.octave, result.frequency, result.confidence, noteInfo.cents);
+            }
 
             std::lock_guard<std::mutex> lock(_resultMutex);
             _latestFrequency = result.frequency;
@@ -93,6 +135,15 @@
             _latestNote = noteInfo.note;
             _latestOctave = noteInfo.octave;
             _latestCents = noteInfo.cents;
+        } else if (++_noPitchCount >= 3) {
+            // Clear stale result after 3 consecutive non-detections (~60ms)
+            // so the UI doesn't show a ghost note from old ambient noise
+            std::lock_guard<std::mutex> lock(_resultMutex);
+            _latestFrequency = 0;
+            _latestConfidence = 0;
+            _latestNote = "";
+            _latestOctave = 0;
+            _latestCents = 0;
         }
 
         // Slide window by HOP_SIZE for overlapping frames
@@ -114,7 +165,10 @@
     return @{
         @"frequency": @(_latestFrequency),
         @"confidence": @(_latestConfidence),
-        @"note": noteString
+        @"note": noteString,
+        @"_dbgBuffers": @(_bufferCallCount.load(std::memory_order_relaxed)),
+        @"_dbgDetects": @(_detectCallCount),
+        @"_dbgRms": @(_lastRms.load(std::memory_order_relaxed))
     };
 }
 

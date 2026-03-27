@@ -50,6 +50,82 @@ Updated `PitchDetector.podspec` to copy shared C++ sources into `ios/generated_c
 ### Result
 iOS build succeeds with zero errors. Both `yin.cpp` and `note_mapper.cpp` compile and link correctly into the PitchDetector pod.
 
+## iOS Pitch Detection Debug Session (2026-03-26)
+
+**Symptom:** Quiz screen shows "Hearing" label with "—" (no note) and "Listening" (mic active). No notes ever detected regardless of what is played. App does not crash.
+
+### Root Cause Analysis (three issues found)
+
+**Issue 1 — Sample rate mismatch between audio tap and YIN detector**
+The previous commit (`e39be03`) fixed the audio tap to use the hardware sample rate (48000 Hz) instead of hardcoded 44100 Hz, preventing a format mismatch crash. However, the C++ YIN detector and HighPassFilter were still initialized with the default 44100 Hz. This would cause `frequency = 44100 / tau` instead of `48000 / tau` (~9% pitch error, every note maps wrong).
+
+**Fix:** Added `configureSampleRate:` method to `PitchDetectorBridge` that reinitializes both `_yin` and `_highPass` with the actual hardware sample rate. Called from `AudioCaptureManager.swift` after reading `hwFormat.sampleRate`.
+
+Files changed:
+- `modules/pitch-detector/ios/PitchDetectorBridge.h` — added `configureSampleRate:` declaration
+- `modules/pitch-detector/ios/PitchDetectorBridge.mm` — implemented `configureSampleRate:` method
+- `modules/pitch-detector/ios/AudioCaptureManager.swift` — calls `bridge.configureSampleRate(Float(hwFormat.sampleRate))`
+
+**Issue 2 — Audio session and tap format problems**
+Two sub-issues prevented the audio tap from firing:
+
+a) `loadSounds()` (expo-audio) calls `setAudioModeAsync({ allowsRecording: true })` which sets the session to `.playAndRecord` before our engine starts. The old code had `if session.category != .playAndRecord` which skipped reconfiguring, leaving expo-audio's options (which may not route the mic properly). Fix: always call `setCategory(.playAndRecord, options: [.defaultToSpeaker, .allowBluetooth])`.
+
+b) The tap was installed with a forced-mono `desiredFormat` while the hardware provides stereo. On newer iOS versions, this format conversion can cause the tap to silently never fire. Fix: install the tap with `hwFormat` (native format) and extract channel 0 in the callback.
+
+Also changed `.allowBluetoothA2DP` back to `.allowBluetooth` (A2DP is output-only, doesn't support mic input).
+
+**Issue 3 — Ring buffer too small for 48 kHz buffer deliveries (THE MAIN BLOCKER)**
+This was the actual reason `dets=0` (YIN never ran). The ring buffer capacity was 4096 samples, but the hardware at 48 kHz delivers **4800 frames per tap callback**. Each `write()` silently truncated because 4800 > 4096, and the ring buffer never accumulated the `FRAME_SIZE` (2048) samples needed to trigger YIN detection.
+
+**Fix:** Increased `RingBuffer::CAPACITY` from 4096 to 16384 (enough for ~3 full buffer deliveries at 48 kHz).
+
+Files changed:
+- `modules/pitch-detector/cpp/ring_buffer.h` — CAPACITY 4096 → 16384
+- `modules/pitch-detector/ios/generated_cpp/ring_buffer.h` — same change (staged copy)
+
+### Debug instrumentation still in place (remove before release)
+The following debug logging was added during investigation and remains in the codebase:
+
+- **`AudioCaptureManager.swift`**: NSLog of hwFormat, session category, engine state, per-tap RMS (first 5 + every 100th)
+- **`PitchDetectorBridge.mm`**: NSLog of configureSampleRate value, per-detection YIN output (first 10 + every 50th), accepted note logs. `getLatestPitch` returns extra `_dbgBuffers`, `_dbgDetects`, `_dbgRms` fields. Added `_bufferCallCount`, `_lastRms`, `_detectCallCount` ivars.
+- **`PitchDetector.ts`**: console.log of raw poll results with debug counters (first 10 + every 60th). Added `pollCountRef`.
+
+### Status (after initial fixes)
+Issues 1–3 applied. Rebuilt and tested — `dets=428, bufs=92` confirmed YIN is running. However two new problems surfaced (see below).
+
+### Key Gotcha for Future Reference
+When changing audio sample rates on iOS, ALL components in the pipeline must agree: audio session → AVAudioEngine tap format → HighPassFilter → RingBuffer capacity → YIN detector. The ring buffer must be sized for the actual buffer delivery size at the hardware rate, not the old 44100 Hz assumptions.
+
+## iOS Pitch Detection Follow-up (2026-03-26)
+
+**Symptom:** After the three fixes above, `dets` and `bufs` are non-zero (detection IS running), but:
+1. When nothing is played, a ghost **D2 (73.57 Hz, conf 0.87)** is detected from ambient electrical hum/noise.
+2. `bufs` freezes at 92 (~9 seconds of audio) — the audio tap stops delivering buffers entirely.
+
+### Issue 4 — Ghost note: stale detection result never cleared
+
+`getLatestPitch` always returns the last *successful* detection. When the signal goes quiet (RMS < 0.01), YIN returns no-pitch, but the old result (D2 from initial mic noise) persists forever. The quiz then submits this ghost note.
+
+**Fix:** Added `_noPitchCount` counter in `PitchDetectorBridge.mm`. After 3 consecutive frames with no valid pitch (~60ms), the stored result is cleared to `frequency=0, confidence=0, note=""`.
+
+### Issue 5 — Audio engine tap dies after sound effect playback
+
+The ghost D2 triggers a quiz answer → `playCorrectSound()` / `playWrongSound()` fires → expo-audio's `AudioPlayer.play()` reconfigures the `AVAudioSession` options under the hood (e.g. adding `duckOthers`, removing `defaultToSpeaker`). This disrupts the `AVAudioEngine` input tap, which silently stops delivering buffers. There was no recovery mechanism.
+
+**Fix:** Refactored `AudioCaptureManager.swift`:
+- Extracted engine setup into reusable `setupAndStartEngine()` (reconfigures session, reinstalls tap, restarts engine).
+- Added observers for `AVAudioEngineConfigurationChange` and `AVAudioSession.routeChangeNotification`.
+- On interruption end, always calls `restartEngine()` regardless of `shouldResume` flag.
+- `restartEngine()` dispatches async with guard against concurrent restarts.
+- Session reconfiguration (`setCategory(.playAndRecord, options: [.defaultToSpeaker, .allowBluetooth])`) happens on every engine start to reclaim control from expo-audio.
+
+### Status
+Both fixes applied. Needs rebuild + test to confirm:
+- Silence shows no note (ghost D2 gone)
+- `bufs` keeps incrementing after sound effects play
+- Actual guitar notes are detected correctly
+
 ## Notes
 Agents: after completing a task, mark it done above and add a short note below if anything is worth sharing with future agents (gotchas, decisions made, deviations from plan).
 

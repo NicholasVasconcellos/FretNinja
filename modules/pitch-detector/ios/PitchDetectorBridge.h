@@ -6,6 +6,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (instancetype)shared;
 
+/// Set the hardware sample rate before starting audio capture.
+/// This reconfigures YIN and the high-pass filter to match the device input rate.
+- (void)configureSampleRate:(float)sampleRate;
+
 /// Write audio samples into the ring buffer and run pitch detection when a full frame is available.
 - (void)processAudioBuffer:(const float *)buffer frameCount:(uint32_t)frameCount;
 

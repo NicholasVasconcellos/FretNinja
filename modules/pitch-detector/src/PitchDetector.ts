@@ -30,12 +30,25 @@ export function usePitchDetector(
     }
   }, []);
 
+  const pollCountRef = useRef(0);
+
   const startPolling = useCallback(() => {
     stopPolling();
+    pollCountRef.current = 0;
     const intervalMs = Math.round(1000 / pollRate);
     intervalRef.current = setInterval(() => {
       try {
         const result = PitchDetectorModule.getLatestPitch();
+        pollCountRef.current++;
+
+        // Debug: log raw native results including buffer/detect counters
+        const r = result as any;
+        if (pollCountRef.current <= 10 || pollCountRef.current % 60 === 0) {
+          console.log(
+            `[PitchDebug] poll #${pollCountRef.current}  freq=${r?.frequency ?? 'nil'}  conf=${r?.confidence ?? 'nil'}  note=${r?.note ?? 'nil'}  bufs=${r?._dbgBuffers ?? '?'}  dets=${r?._dbgDetects ?? '?'}  rms=${r?._dbgRms?.toFixed(6) ?? '?'}`
+          );
+        }
+
         if (result && result.confidence >= minConfidence) {
           setPitch(result);
         } else {
@@ -46,7 +59,8 @@ export function usePitchDetector(
           const latencyMs = PitchDetectorModule.getLatencyMs();
           setDebugInfo({ latencyMs });
         }
-      } catch {
+      } catch (e) {
+        console.log(`[PitchDebug] poll error:`, e);
         setPitch(null);
         if (debugMode) {
           setDebugInfo(null);

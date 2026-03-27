@@ -7,7 +7,7 @@
 
 class RingBuffer {
 public:
-  static constexpr size_t CAPACITY = 4096;
+  static constexpr size_t CAPACITY = 16384;
 
   RingBuffer() : head_(0), tail_(0) {
     std::memset(buffer_, 0, sizeof(buffer_));
