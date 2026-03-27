@@ -121,10 +121,24 @@ The ghost D2 triggers a quiz answer → `playCorrectSound()` / `playWrongSound()
 - Session reconfiguration (`setCategory(.playAndRecord, options: [.defaultToSpeaker, .allowBluetooth])`) happens on every engine start to reclaim control from expo-audio.
 
 ### Status
-Both fixes applied. Needs rebuild + test to confirm:
-- Silence shows no note (ghost D2 gone)
-- `bufs` keeps incrementing after sound effects play
-- Actual guitar notes are detected correctly
+Both fixes applied. Rebuilt and confirmed YIN detection is running (`dets` and `bufs` incrementing, ACCEPTED notes logged). However detected notes were not reaching the UI (see Issue 6 below).
+
+## iOS Pitch Detection — UI Not Updating (2026-03-26)
+
+### Issue 6 — Note field included octave, mismatching the Note type
+
+**Symptom:** Console logs `[PitchDebug] ACCEPTED note=D2 freq=73.6 conf=0.87` but the quiz UI never reacts — no correct/incorrect feedback, PitchIndicator stays blank.
+
+**Root Cause:** `getLatestPitch` in `PitchDetectorBridge.mm` returned the `note` field as `"D2"` (note name + octave concatenated via `[NSString stringWithFormat:@"%s%d", ...]`). The TypeScript `PitchResult` type expects `note` to be just the note name (e.g. `"D"`), with `octave` and `cents` as separate numeric fields. The quiz screen casts `pitch.note` to the `Note` union type (`"C" | "C#" | "D" | ...`), so `"D2"` never matched any valid note and `submitDetectedNote` silently did nothing.
+
+Additionally, the native return dictionary was missing the `octave` and `cents` fields entirely, so those were always `undefined` on the JS side.
+
+**Fix:** Changed `getLatestPitch` to return:
+- `note`: just the note name string (e.g. `"D"`, not `"D2"`)
+- `octave`: integer octave number (e.g. `2`)
+- `cents`: float cents offset from the nearest semitone
+
+File changed: `modules/pitch-detector/ios/PitchDetectorBridge.mm`
 
 ## Notes
 Agents: after completing a task, mark it done above and add a short note below if anything is worth sharing with future agents (gotchas, decisions made, deviations from plan).

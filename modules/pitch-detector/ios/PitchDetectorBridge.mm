@@ -158,14 +158,15 @@
 
     NSString *noteString = @"";
     if (!_latestNote.empty()) {
-        noteString = [NSString stringWithFormat:@"%s%d",
-                      _latestNote.c_str(), _latestOctave];
+        noteString = [NSString stringWithUTF8String:_latestNote.c_str()];
     }
 
     return @{
         @"frequency": @(_latestFrequency),
         @"confidence": @(_latestConfidence),
         @"note": noteString,
+        @"octave": @(_latestOctave),
+        @"cents": @(_latestCents),
         @"_dbgBuffers": @(_bufferCallCount.load(std::memory_order_relaxed)),
         @"_dbgDetects": @(_detectCallCount),
         @"_dbgRms": @(_lastRms.load(std::memory_order_relaxed))
