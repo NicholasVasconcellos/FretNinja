@@ -22,6 +22,34 @@
 - [x] 020 - Testing Suite & Module Documentation
 - [x] 021 - Swap Old Pitch Detection for New Module
 
+## Build Fix Session (2026-03-26)
+
+### Issue 1 — Missing pod source
+Build error: `react-native-permissions/ios/RNPermissionsModule.mm` not found.
+
+**Root Cause:** `react-native-permissions` was in Podfile/Podfile.lock but NOT in package.json and NOT imported anywhere in source code. Stale pod reference.
+
+**Fix:**
+1. Removed `react-native-permissions` from Podfile — deleted `require`/`setup_permissions` block. Microphone permission already in Info.plist.
+2. Ran `pod install` — removed stale pods: `RNPermissions`, `Beethoven`, `Pitchy`, `react-native-pitch-detector`.
+
+### Issue 2 — Undefined symbols for YIN/NoteMapper (linker error)
+After fixing Issue 1, the build failed at link time with undefined symbols for `YIN::detect()` and `NoteMapper::mapToNote()`.
+
+**Root Cause:** CocoaPods `source_files` globs are evaluated relative to the podspec directory (`modules/pitch-detector/ios/`). The shared C++ DSP sources live in `modules/pitch-detector/cpp/` (a parent-relative path). Two approaches were tried and failed:
+- **Symlink** (`ios/cpp -> ../cpp`): Ruby's `Dir.glob` does not follow symlinks, so CocoaPods never saw the `.cpp` files.
+- **Parent path in glob** (`../cpp/*.{h,hpp,cpp}`): CocoaPods silently ignores source files outside the podspec root directory.
+
+**Fix — physical staging via `prepare_command`-style copy:**
+Updated `PitchDetector.podspec` to copy shared C++ sources into `ios/generated_cpp/` at pod-evaluation time using `FileUtils.cp`. The podspec then compiles from `generated_cpp/` which is inside its own directory. Key changes:
+1. Added `require 'fileutils'` and a staging block that copies `../cpp/*.{h,hpp,cpp}` into `ios/generated_cpp/`, excluding test files.
+2. Changed `source_files` to `['*.{h,m,mm,swift}', 'generated_cpp/*.{h,hpp,cpp}']`.
+3. Updated `HEADER_SEARCH_PATHS` to include `generated_cpp/`.
+4. Removed the old `ios/cpp` symlink (no longer needed).
+
+### Result
+iOS build succeeds with zero errors. Both `yin.cpp` and `note_mapper.cpp` compile and link correctly into the PitchDetector pod.
+
 ## Notes
 Agents: after completing a task, mark it done above and add a short note below if anything is worth sharing with future agents (gotchas, decisions made, deviations from plan).
 
