@@ -25,15 +25,16 @@ class AudioCaptureManager: NSObject {
                 // Only reconfigure if not already .playAndRecord (coexist with expo-audio)
                 if session.category != .playAndRecord {
                     try session.setCategory(.playAndRecord,
-                        options: [.defaultToSpeaker, .allowBluetooth])
+                        options: [.defaultToSpeaker, .allowBluetoothA2DP])
                 }
                 try session.setActive(true)
 
                 let engine = AVAudioEngine()
                 let inputNode = engine.inputNode
+                let hwFormat = inputNode.outputFormat(forBus: 0)
 
                 let desiredFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32,
-                    sampleRate: 44100, channels: 1, interleaved: false)!
+                    sampleRate: hwFormat.sampleRate, channels: 1, interleaved: false)!
 
                 let bridge = PitchDetectorBridge.shared()
 
