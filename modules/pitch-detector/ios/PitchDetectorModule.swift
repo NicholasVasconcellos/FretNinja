@@ -24,6 +24,13 @@ public class PitchDetectorModule: Module {
             return PitchDetectorBridge.shared().getLatestPitch() as [String: Any]
         }
 
+        Function("configure") { (rmsThreshold: Double, nativeConfidence: Double) in
+            PitchDetectorBridge.shared().configureRmsThreshold(
+                Float(rmsThreshold),
+                nativeConfidence: Float(nativeConfidence)
+            )
+        }
+
         Function("getLatencyMs") { () -> Double in
             return PitchDetectorBridge.shared().getLatencyMs()
         }

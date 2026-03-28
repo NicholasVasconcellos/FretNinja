@@ -22,6 +22,11 @@ void YIN::reset() {
   ema_initialized_ = false;
 }
 
+void YIN::setRmsThreshold(float threshold) { rms_threshold_ = threshold; }
+void YIN::setMinConfidence(float confidence) { min_confidence_ = confidence; }
+float YIN::getRmsThreshold() const { return rms_threshold_; }
+float YIN::getMinConfidence() const { return min_confidence_; }
+
 float YIN::computeRMS(const float* buffer, int length) {
   float sum = 0.0f;
   for (int i = 0; i < length; ++i) {
@@ -139,7 +144,7 @@ PitchResult YIN::detect(const float* buffer, int length) {
   result.clipping = detectClipping(buffer, length);
 
   // Skip expensive YIN computation if the signal is below the silence threshold
-  if (computeRMS(buffer, length) < RMS_SILENCE_THRESHOLD) {
+  if (computeRMS(buffer, length) < rms_threshold_) {
     ema_frequency_ = 0.0f;
     ema_initialized_ = false;
     return result;
@@ -168,7 +173,7 @@ PitchResult YIN::detect(const float* buffer, int length) {
   if (confidence < 0.0f) confidence = 0.0f;
   if (confidence > 1.0f) confidence = 1.0f;
 
-  if (confidence < MIN_CONFIDENCE) {
+  if (confidence < min_confidence_) {
     ema_frequency_ = 0.0f;
     ema_initialized_ = false;
     result.frequency = frequency;

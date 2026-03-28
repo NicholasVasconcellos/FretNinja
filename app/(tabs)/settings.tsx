@@ -287,6 +287,8 @@ export default function SettingsScreen() {
     smartWeighting,
     showFretboardAfterAnswer,
     stringLabelStyle,
+    detectionSensitivity,
+    noiseGate,
     updateSettings,
     resetSettings,
   } = useSettingsStore();
@@ -400,6 +402,41 @@ export default function SettingsScreen() {
         onValueChange={(v) => updateSettings({ smartWeighting: v })}
       />
 
+      {/* ── Detection ─────────────────────────────── */}
+      <SectionHeader title="DETECTION" />
+
+      <Card>
+        <Text style={s.cardLabel}>Sensitivity</Text>
+        <Text style={s.cardHint}>
+          How easily notes are detected — lower means stricter, reducing false positives from noise
+        </Text>
+        <View style={s.detectionRow}>
+          <FretStepper
+            value={detectionSensitivity}
+            min={1}
+            max={10}
+            onChange={(v) => updateSettings({ detectionSensitivity: v })}
+            tag=""
+          />
+        </View>
+      </Card>
+
+      <Card>
+        <Text style={s.cardLabel}>Noise Gate</Text>
+        <Text style={s.cardHint}>
+          Minimum volume to trigger detection — higher ignores quieter background sounds
+        </Text>
+        <View style={s.detectionRow}>
+          <FretStepper
+            value={noiseGate}
+            min={1}
+            max={10}
+            onChange={(v) => updateSettings({ noiseGate: v })}
+            tag=""
+          />
+        </View>
+      </Card>
+
       {/* ── Reset ─────────────────────────────────── */}
       <TouchableOpacity style={s.resetBtn} onPress={resetSettings} activeOpacity={0.7}>
         <Text style={s.resetTxt}>Reset to Defaults</Text>
@@ -461,6 +498,12 @@ const s = StyleSheet.create({
     width: 18,
     height: StyleSheet.hairlineWidth,
     backgroundColor: colors.neonGreen + '44',
+  },
+
+  /* detection tuning */
+  detectionRow: {
+    alignItems: 'center',
+    marginTop: spacing.sm + 2,
   },
 
   /* reset */

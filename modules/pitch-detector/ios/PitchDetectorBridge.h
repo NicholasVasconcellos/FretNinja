@@ -16,6 +16,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// Read the latest pitch detection result. Thread-safe.
 - (NSDictionary<NSString *, id> *)getLatestPitch;
 
+/// Update detection thresholds at runtime (called from JS settings).
+- (void)configureRmsThreshold:(float)rmsThreshold nativeConfidence:(float)nativeConfidence;
+
 /// Reset internal state (ring buffer, frame buffer, latest result).
 - (void)reset;
 

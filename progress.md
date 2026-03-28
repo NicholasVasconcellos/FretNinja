@@ -140,6 +140,42 @@ Additionally, the native return dictionary was missing the `octave` and `cents` 
 
 File changed: `modules/pitch-detector/ios/PitchDetectorBridge.mm`
 
+## Configurable Detection Thresholds (2026-03-28)
+
+Added user-facing controls for the pitch detection pipeline's key thresholds. Previously all values were hardcoded constants; now they're adjustable from the Settings screen via two 1–10 steppers (level 5 = original defaults).
+
+### Parameters exposed
+
+| Setting | UI Range | Maps to | Level 1 | Level 5 (default) | Level 10 |
+|---------|----------|---------|---------|-------------------|----------|
+| **Sensitivity** | 1–10 | JS `minConfidence` | 0.97 | 0.85 | 0.50 |
+| | | Native `MIN_CONFIDENCE` | 0.80 | 0.50 | 0.15 |
+| **Noise Gate** | 1–10 | `RMS_SILENCE_THRESHOLD` | 0.002 | 0.01 | 0.10 |
+
+### Data flow
+
+```
+Settings UI (steppers) → settingsStore (MMKV)
+  → quiz.tsx reads store, maps via utils/detectionMapping.ts
+  → usePitchDetector({ minConfidence, nativeRmsThreshold, nativeMinConfidence })
+  → hook calls PitchDetectorModule.configure() before start()
+  → Swift Module → ObjC++ Bridge → C++ YIN member variables
+```
+
+### Files changed
+- **types/index.ts** — added `detectionSensitivity`, `noiseGate` to `AppSettings`
+- **stores/settingsStore.ts** — defaults (both 5)
+- **utils/detectionMapping.ts** — NEW: lookup tables mapping 1–10 → technical values
+- **modules/pitch-detector/ios/generated_cpp/yin.h** — `MIN_CONFIDENCE` and `RMS_SILENCE_THRESHOLD` replaced with member variables + setters
+- **modules/pitch-detector/ios/generated_cpp/yin.cpp** — uses `rms_threshold_` / `min_confidence_` members
+- **modules/pitch-detector/ios/PitchDetectorBridge.h/.mm** — added `configureRmsThreshold:nativeConfidence:` method
+- **modules/pitch-detector/ios/PitchDetectorModule.swift** — added `configure(rmsThreshold, nativeConfidence)` function
+- **modules/pitch-detector/src/PitchDetectorModule.ts** — added `configure()` to TS interface
+- **modules/pitch-detector/src/types.ts** — added `nativeRmsThreshold`, `nativeMinConfidence` options
+- **modules/pitch-detector/src/PitchDetector.ts** — calls `configure()` before `start()`
+- **app/quiz.tsx** — reads settings, maps to thresholds, passes to hook
+- **app/(tabs)/settings.tsx** — added "DETECTION" section with Sensitivity and Noise Gate steppers
+
 ## Notes
 Agents: after completing a task, mark it done above and add a short note below if anything is worth sharing with future agents (gotchas, decisions made, deviations from plan).
 

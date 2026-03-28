@@ -117,7 +117,7 @@
                   _detectCallCount, rms, result.frequency, result.confidence, result.clipping);
         }
 
-        if (result.confidence >= MIN_CONFIDENCE &&
+        if (result.confidence >= _yin.getMinConfidence() &&
             result.frequency >= MIN_FREQUENCY &&
             result.frequency <= MAX_FREQUENCY) {
             _noPitchCount = 0;
@@ -180,6 +180,12 @@
     int64_t nowNs = std::chrono::duration_cast<std::chrono::nanoseconds>(
         now.time_since_epoch()).count();
     return static_cast<double>(nowNs - ts) / 1e6;
+}
+
+- (void)configureRmsThreshold:(float)rmsThreshold nativeConfidence:(float)nativeConfidence {
+    NSLog(@"[PitchDebug] configureThresholds: rms=%.4f  nativeConf=%.2f", rmsThreshold, nativeConfidence);
+    _yin.setRmsThreshold(rmsThreshold);
+    _yin.setMinConfidence(nativeConfidence);
 }
 
 - (void)reset {

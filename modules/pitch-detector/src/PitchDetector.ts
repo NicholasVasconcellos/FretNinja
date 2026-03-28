@@ -15,6 +15,8 @@ export function usePitchDetector(
   const pollRate = options?.pollRate ?? 30;
   const minConfidence = options?.minConfidence ?? 0.85;
   const debugMode = options?.debug ?? false;
+  const nativeRmsThreshold = options?.nativeRmsThreshold;
+  const nativeMinConfidence = options?.nativeMinConfidence;
 
   const [pitch, setPitch] = useState<PitchResult | null>(null);
   const [status, setStatus] = useState<PitchDetectorStatus>("idle");
@@ -74,6 +76,13 @@ export function usePitchDetector(
     setStatus("starting");
     statusRef.current = "starting";
     try {
+      // Apply native thresholds before starting audio capture
+      if (nativeRmsThreshold !== undefined || nativeMinConfidence !== undefined) {
+        PitchDetectorModule.configure(
+          nativeRmsThreshold ?? 0.01,
+          nativeMinConfidence ?? 0.5,
+        );
+      }
       await PitchDetectorModule.start();
       setStatus("active");
       statusRef.current = "active";
@@ -83,7 +92,7 @@ export function usePitchDetector(
       statusRef.current = "idle";
       throw error;
     }
-  }, [startPolling]);
+  }, [startPolling, nativeRmsThreshold, nativeMinConfidence]);
 
   const stop = useCallback(() => {
     stopPolling();

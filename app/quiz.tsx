@@ -13,6 +13,11 @@ import { PitchIndicator } from '../components/PitchIndicator';
 import { FeedbackOverlay } from '../components/FeedbackOverlay';
 import { FretboardDiagram } from '../components/FretboardDiagram';
 import { loadSounds, playCorrectSound, playWrongSound, unloadSounds } from '../utils/sounds';
+import {
+  sensitivityToJsConfidence,
+  sensitivityToNativeConfidence,
+  noiseGateToRmsThreshold,
+} from '../utils/detectionMapping';
 import type { GuitarString, Note } from '../types';
 
 export default function QuizScreen() {
@@ -20,7 +25,11 @@ export default function QuizScreen() {
   const insets = useSafeAreaInsets();
   const settings = useSettingsStore();
   const quiz = useQuizEngine();
-  const { pitch, status, start, stop } = usePitchDetector();
+  const { pitch, status, start, stop } = usePitchDetector({
+    minConfidence: sensitivityToJsConfidence(settings.detectionSensitivity),
+    nativeRmsThreshold: noiseGateToRmsThreshold(settings.noiseGate),
+    nativeMinConfidence: sensitivityToNativeConfidence(settings.detectionSensitivity),
+  });
 
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
   const [lastCombo, setLastCombo] = useState<{ string: GuitarString; note: Note } | null>(null);

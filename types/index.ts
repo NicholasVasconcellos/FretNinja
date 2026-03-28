@@ -70,4 +70,8 @@ export interface AppSettings {
   smartWeighting: boolean;
   showFretboardAfterAnswer: boolean;
   stringLabelStyle: StringLabelStyle;
+  /** Detection sensitivity 1-10 (lower = stricter, less noise) */
+  detectionSensitivity: number;
+  /** Noise gate level 1-10 (higher = ignores quieter sounds) */
+  noiseGate: number;
 }

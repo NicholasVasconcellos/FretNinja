@@ -16,6 +16,10 @@ export interface UsePitchDetectorOptions {
   pollRate?: number;
   minConfidence?: number;
   debug?: boolean;
+  /** Native RMS silence threshold (passed to C++ YIN before start) */
+  nativeRmsThreshold?: number;
+  /** Native minimum confidence (passed to C++ YIN before start) */
+  nativeMinConfidence?: number;
 }
 
 export interface UsePitchDetectorReturn {

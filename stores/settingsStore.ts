@@ -22,6 +22,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   smartWeighting: true,
   showFretboardAfterAnswer: true,
   stringLabelStyle: 'number' as StringLabelStyle,
+  detectionSensitivity: 5,
+  noiseGate: 5,
 };
 
 interface SettingsStore extends AppSettings {
