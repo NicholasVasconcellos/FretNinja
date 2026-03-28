@@ -17,6 +17,7 @@ class PitchDetectorModule : Module() {
 
   private external fun nativeStart(): Boolean
   private external fun nativeStop()
+  private external fun nativeConfigure(rmsThreshold: Float, nativeConfidence: Float)
   private external fun nativeGetLatestPitch(): FloatArray
   private external fun nativeGetLatencyMs(): Double
 
@@ -71,6 +72,10 @@ class PitchDetectorModule : Module() {
         "octave" to octave,
         "cents" to raw[2].toDouble()
       )
+    }
+
+    Function("configure") { rmsThreshold: Double, nativeConfidence: Double ->
+      nativeConfigure(rmsThreshold.toFloat(), nativeConfidence.toFloat())
     }
 
     Function("getLatencyMs") {

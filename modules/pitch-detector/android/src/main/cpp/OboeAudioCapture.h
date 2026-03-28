@@ -50,6 +50,9 @@ public:
   bool start();
   void stop();
 
+  // Configure detection thresholds from JS
+  void configure(float rmsThreshold, float nativeConfidence);
+
   // Read latest pitch result (thread-safe, lock-free)
   void getLatestPitch(float& frequency, float& confidence, float& cents,
                       int& octave, char noteName[4]);

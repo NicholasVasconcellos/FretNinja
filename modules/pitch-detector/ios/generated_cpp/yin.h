@@ -10,12 +10,12 @@ constexpr int HOP_SIZE = 1024;
 constexpr float YIN_THRESHOLD = 0.15f;
 constexpr float MIN_FREQUENCY = 65.0f;
 constexpr float MAX_FREQUENCY = 4200.0f;
+constexpr float MIN_CONFIDENCE = 0.5f;
 
 // Signal processing constants
 constexpr float EMA_ALPHA = 0.35f;
-constexpr float DEFAULT_RMS_SILENCE_THRESHOLD = 0.01f;
+constexpr float RMS_SILENCE_THRESHOLD = 0.01f;
 constexpr float CLIPPING_THRESHOLD = 0.99f;
-constexpr float DEFAULT_MIN_CONFIDENCE = 0.5f;
 
 class YIN {
 public:
@@ -27,10 +27,9 @@ public:
   // Reset EMA smoothing state (call on stop/start)
   void reset();
 
-  // Runtime-configurable thresholds
+  // Configurable thresholds (set from native module configure())
   void setRmsThreshold(float threshold);
   void setMinConfidence(float confidence);
-  float getRmsThreshold() const;
   float getMinConfidence() const;
 
   // Signal analysis utilities
@@ -47,13 +46,13 @@ private:
   std::vector<float> diff_;
   std::vector<float> cmnd_;
 
-  // Configurable thresholds
-  float rms_threshold_ = DEFAULT_RMS_SILENCE_THRESHOLD;
-  float min_confidence_ = DEFAULT_MIN_CONFIDENCE;
-
   // EMA smoothing state
   float ema_frequency_ = 0.0f;
   bool ema_initialized_ = false;
+
+  // Configurable thresholds (defaults match header constants)
+  float rms_threshold_ = RMS_SILENCE_THRESHOLD;
+  float min_confidence_ = MIN_CONFIDENCE;
 
   void difference(const float* buffer, int length);
   void cumulativeMeanNormalizedDifference();

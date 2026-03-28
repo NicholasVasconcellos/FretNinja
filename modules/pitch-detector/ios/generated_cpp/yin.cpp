@@ -24,7 +24,6 @@ void YIN::reset() {
 
 void YIN::setRmsThreshold(float threshold) { rms_threshold_ = threshold; }
 void YIN::setMinConfidence(float confidence) { min_confidence_ = confidence; }
-float YIN::getRmsThreshold() const { return rms_threshold_; }
 float YIN::getMinConfidence() const { return min_confidence_; }
 
 float YIN::computeRMS(const float* buffer, int length) {

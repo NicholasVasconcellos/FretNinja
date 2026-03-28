@@ -53,6 +53,15 @@ Java_expo_modules_pitchdetector_PitchDetectorModule_nativeGetLatestPitch(
   return result;
 }
 
+JNIEXPORT void JNICALL
+Java_expo_modules_pitchdetector_PitchDetectorModule_nativeConfigure(
+    JNIEnv* /*env*/, jobject /*thiz*/, jfloat rmsThreshold,
+    jfloat nativeConfidence) {
+  if (g_capture) {
+    g_capture->configure(rmsThreshold, nativeConfidence);
+  }
+}
+
 JNIEXPORT jdouble JNICALL
 Java_expo_modules_pitchdetector_PitchDetectorModule_nativeGetLatencyMs(
     JNIEnv* /*env*/, jobject /*thiz*/) {

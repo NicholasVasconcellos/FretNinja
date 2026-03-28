@@ -13,6 +13,11 @@ OboeAudioCapture::OboeAudioCapture()
 
 OboeAudioCapture::~OboeAudioCapture() { stop(); }
 
+void OboeAudioCapture::configure(float rmsThreshold, float nativeConfidence) {
+  yin_.setRmsThreshold(rmsThreshold);
+  yin_.setMinConfidence(nativeConfidence);
+}
+
 bool OboeAudioCapture::start() {
   if (running_.load(std::memory_order_acquire)) {
     return true;
@@ -131,7 +136,7 @@ oboe::DataCallbackResult OboeAudioCapture::onAudioReady(
 
       if (result.frequency >= MIN_FREQUENCY &&
           result.frequency <= MAX_FREQUENCY &&
-          result.confidence >= MIN_CONFIDENCE) {
+          result.confidence >= yin_.getMinConfidence()) {
         NoteInfo noteInfo = NoteMapper::mapToNote(result.frequency);
         latestPitch_.store(result.frequency, result.confidence, noteInfo);
       }
