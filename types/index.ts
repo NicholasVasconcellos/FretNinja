@@ -74,4 +74,6 @@ export interface AppSettings {
   detectionSensitivity: number;
   /** Noise gate level 1-10 (higher = ignores quieter sounds) */
   noiseGate: number;
+  /** Minimum ms a correct note must be held before it counts (0 = instant) */
+  noteDurationMs: number;
 }

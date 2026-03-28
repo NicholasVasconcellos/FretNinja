@@ -12,6 +12,7 @@ interface RoundStore {
   startRound: (questions: NoteCombo[]) => void;
   recordAnswer: (result: QuestionResult) => void;
   nextQuestion: () => void;
+  previousQuestion: () => void;
   finishRound: () => void;
   resetRound: () => void;
   getCurrentQuestion: () => NoteCombo | null;
@@ -43,6 +44,15 @@ export const useRoundStore = create<RoundStore>()((set, get) => ({
         return { status: 'finished', currentIndex: nextIndex };
       }
       return { currentIndex: nextIndex };
+    }),
+
+  previousQuestion: () =>
+    set((state) => {
+      if (state.currentIndex <= 0) return state;
+      return {
+        currentIndex: state.currentIndex - 1,
+        results: state.results.slice(0, -1),
+      };
     }),
 
   finishRound: () => set({ status: 'finished' }),

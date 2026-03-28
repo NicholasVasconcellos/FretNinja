@@ -11,6 +11,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, typography, spacing, borderRadius } from '../../constants/theme';
 import { useSettingsStore } from '../../stores/settingsStore';
+import { SwipeableTab } from '../../components/SwipeableTab';
 import type { StringLabelStyle } from '../../types';
 
 /* ── option arrays ─────────────────────────────────────── */
@@ -18,6 +19,9 @@ import type { StringLabelStyle } from '../../types';
 const ROUND_OPTIONS = [5, 10, 15, 20];
 const TIMER_VALUES = [0, 5, 10, 15, 30];
 const STRING_LABEL_OPTIONS: StringLabelStyle[] = ['number', 'name'];
+const NOTE_DURATION_OPTIONS = [0, 100, 200, 300, 500];
+
+const noteDurationLabel = (v: number) => (v === 0 ? 'Off' : `${v}ms`);
 
 const timerLabel = (v: number) => (v === 0 ? 'Off' : `${v}s`);
 const stringLabel = (v: StringLabelStyle) =>
@@ -289,6 +293,7 @@ export default function SettingsScreen() {
     stringLabelStyle,
     detectionSensitivity,
     noiseGate,
+    noteDurationMs,
     updateSettings,
     resetSettings,
   } = useSettingsStore();
@@ -319,6 +324,7 @@ export default function SettingsScreen() {
   );
 
   return (
+    <SwipeableTab prevTab="/(tabs)/stats">
     <View style={[s.safeTop, { paddingTop: insets.top }]}>
     <ScrollView
       style={s.scroll}
@@ -422,6 +428,21 @@ export default function SettingsScreen() {
       </Card>
 
       <Card>
+        <Text style={s.cardLabel}>Note Duration</Text>
+        <Text style={s.cardHint}>
+          How long a correct note must be held before it counts — prevents accidental triggers
+        </Text>
+        <View style={s.controlWrap}>
+          <SegmentedControl
+            options={NOTE_DURATION_OPTIONS}
+            selected={noteDurationMs}
+            onSelect={(v) => updateSettings({ noteDurationMs: v })}
+            label={noteDurationLabel}
+          />
+        </View>
+      </Card>
+
+      <Card>
         <Text style={s.cardLabel}>Noise Gate</Text>
         <Text style={s.cardHint}>
           Minimum volume to trigger detection — higher ignores quieter background sounds
@@ -443,6 +464,7 @@ export default function SettingsScreen() {
       </TouchableOpacity>
     </ScrollView>
     </View>
+    </SwipeableTab>
   );
 }
 

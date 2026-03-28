@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, typography, spacing } from '../../constants/theme';
 import { useMasteryData } from '../../hooks/useMasteryData';
 import MasteryGrid from '../../components/MasteryGrid';
+import { SwipeableTab } from '../../components/SwipeableTab';
 import type { ComboMastery } from '../../types';
 
 function StatCard({ label, value, accent }: { label: string; value: string; accent: string }) {
@@ -66,6 +67,7 @@ export default function StatsScreen() {
   const hasData = totalRounds > 0;
 
   return (
+    <SwipeableTab prevTab="/(tabs)" nextTab="/(tabs)/settings">
     <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.lg }]}>
       <Text style={styles.title}>Mastery</Text>
 
@@ -132,6 +134,7 @@ export default function StatsScreen() {
         </>
       )}
     </ScrollView>
+    </SwipeableTab>
   );
 }
 

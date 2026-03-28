@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, typography } from '../constants/theme';
 import { useQuizEngine } from '../hooks/useQuizEngine';
+import { useShakeDetector } from '../hooks/useShakeDetector';
 import { usePitchDetector } from '../modules/pitch-detector/src';
 import { useSettingsStore } from '../stores/settingsStore';
 import { NotePrompt } from '../components/NotePrompt';
@@ -32,11 +33,16 @@ export default function QuizScreen() {
   });
 
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
+  const [showUndoHint, setShowUndoHint] = useState(false);
   const [lastCombo, setLastCombo] = useState<{ string: GuitarString; note: Note } | null>(null);
   const [timerRemaining, setTimerRemaining] = useState(settings.timerDurationSec);
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const prevResultsLenRef = useRef(0);
   const hasNavigatedRef = useRef(false);
+
+  // Note hold duration tracking
+  const holdNoteRef = useRef<Note | null>(null);
+  const holdStartRef = useRef<number>(0);
 
   // Start round, mic, and preload sounds on mount
   useEffect(() => {
@@ -50,15 +56,43 @@ export default function QuizScreen() {
     };
   }, []);
 
-  // Feed detected notes to the quiz engine
+  // Feed detected notes to the quiz engine (with hold duration gate)
   const detectedNote = (pitch?.note as Note) ?? null;
   const detectedFrequency = pitch?.frequency ?? null;
+  const holdThreshold = settings.noteDurationMs;
 
   useEffect(() => {
-    if (detectedNote && quiz.status === 'active') {
+    if (!detectedNote || quiz.status !== 'active') {
+      holdNoteRef.current = null;
+      return;
+    }
+
+    const expectedNote = quiz.currentPrompt?.note ?? null;
+    if (detectedNote !== expectedNote) {
+      holdNoteRef.current = null;
+      return;
+    }
+
+    // Instant mode — no hold required
+    if (holdThreshold <= 0) {
+      quiz.submitDetectedNote(detectedNote);
+      return;
+    }
+
+    const now = Date.now();
+    if (holdNoteRef.current !== detectedNote) {
+      // Started holding a new matching note
+      holdNoteRef.current = detectedNote;
+      holdStartRef.current = now;
+      return;
+    }
+
+    // Same note still held — check if duration met
+    if (now - holdStartRef.current >= holdThreshold) {
+      holdNoteRef.current = null;
       quiz.submitDetectedNote(detectedNote);
     }
-  }, [detectedNote]);
+  }, [detectedNote, pitch]);
 
   // Track feedback from new results — play sounds
   useEffect(() => {
@@ -117,6 +151,26 @@ export default function QuizScreen() {
   }, [quiz.status, quiz.roundResult]);
 
   const correctCount = quiz.results.filter((r) => r.correct).length;
+
+  const handleShakeUndo = useCallback(() => {
+    if (quiz.goBack()) {
+      setFeedback(null);
+      setShowUndoHint(true);
+      // Reset timer display for the restored question
+      if (settings.timerEnabled) {
+        setTimerRemaining(settings.timerDurationSec);
+      }
+    }
+  }, [quiz, settings.timerEnabled, settings.timerDurationSec]);
+
+  useShakeDetector(handleShakeUndo);
+
+  // Clear undo hint after a short delay
+  useEffect(() => {
+    if (!showUndoHint) return;
+    const t = setTimeout(() => setShowUndoHint(false), 1200);
+    return () => clearTimeout(t);
+  }, [showUndoHint]);
 
   const handleQuit = useCallback(() => {
     quiz.abort();
@@ -184,6 +238,13 @@ export default function QuizScreen() {
 
       {/* Feedback overlay */}
       <FeedbackOverlay type={feedback} />
+
+      {/* Shake-to-undo hint */}
+      {showUndoHint && (
+        <View style={styles.undoHint} pointerEvents="none">
+          <Text style={styles.undoHintText}>Undo — back to previous question</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -241,5 +302,19 @@ const styles = StyleSheet.create({
   micLabel: {
     fontSize: 12,
     color: colors.textMuted,
+  },
+  undoHint: {
+    position: 'absolute',
+    top: '45%',
+    alignSelf: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: 12,
+  },
+  undoHintText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.neonGreen,
   },
 });

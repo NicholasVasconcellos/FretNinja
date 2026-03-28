@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, typography, spacing, glow } from '../../constants/theme';
 import { useMasteryData } from '../../hooks/useMasteryData';
 import { RoundLengthPicker } from '../../components/RoundLengthPicker';
+import { SwipeableTab } from '../../components/SwipeableTab';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -76,6 +77,7 @@ export default function HomeScreen() {
   });
 
   return (
+    <SwipeableTab nextTab="/(tabs)/stats">
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Branding */}
       <Animated.View style={[
@@ -130,6 +132,7 @@ export default function HomeScreen() {
         <RoundLengthPicker />
       </Animated.View>
     </View>
+    </SwipeableTab>
   );
 }
 

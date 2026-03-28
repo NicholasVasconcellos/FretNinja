@@ -29,6 +29,8 @@ export interface QuizEngineState {
   startRound: () => void;
   /** Feed a detected note into the engine */
   submitDetectedNote: (note: Note) => void;
+  /** Go back to the previous question (undo last answer) */
+  goBack: () => boolean;
   /** Abort the current round */
   abort: () => void;
 }
@@ -240,6 +242,18 @@ export function useQuizEngine(): QuizEngineState {
     [clearTimers, finishCurrentRound, startTimer]
   );
 
+  const goBack = useCallback((): boolean => {
+    const state = useRoundStore.getState();
+    if (state.status !== 'active' || state.currentIndex <= 0) return false;
+
+    clearTimers();
+    isProcessingRef.current = false;
+    state.previousQuestion();
+    promptStartTimeRef.current = Date.now();
+    startTimer();
+    return true;
+  }, [clearTimers, startTimer]);
+
   const abort = useCallback(() => {
     clearTimers();
     isProcessingRef.current = false;
@@ -275,6 +289,7 @@ export function useQuizEngine(): QuizEngineState {
     roundResult,
     startRound,
     submitDetectedNote,
+    goBack,
     abort,
   };
 }

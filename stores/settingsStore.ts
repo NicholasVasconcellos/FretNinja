@@ -24,6 +24,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   stringLabelStyle: 'number' as StringLabelStyle,
   detectionSensitivity: 5,
   noiseGate: 5,
+  noteDurationMs: 200,
 };
 
 interface SettingsStore extends AppSettings {
