@@ -67,7 +67,8 @@ class PitchDetectorModule : Module() {
       mapOf(
         "frequency" to raw[0].toDouble(),
         "confidence" to raw[1].toDouble(),
-        "note" to if (noteName.isNotEmpty()) "$noteName$octave" else "",
+        "note" to noteName,
+        "octave" to octave,
         "cents" to raw[2].toDouble()
       )
     }

@@ -176,6 +176,42 @@ Settings UI (steppers) → settingsStore (MMKV)
 - **app/quiz.tsx** — reads settings, maps to thresholds, passes to hook
 - **app/(tabs)/settings.tsx** — added "DETECTION" section with Sensitivity and Noise Gate steppers
 
+## Android Build Session (2026-03-28)
+
+### Environment Setup
+Installed from scratch on macOS (no Android Studio):
+- JDK 17 via `brew install openjdk@17`
+- Android SDK via `brew install --cask android-commandlinetools`
+- SDK components: platform-tools, platforms;android-35, build-tools;35.0.0, ndk;27.0.12077973, emulator, system-images;android-35;google_apis;arm64-v8a
+- Created `android/local.properties` with `sdk.dir=/opt/homebrew/share/android-commandlinetools`
+- AVD: FretNinja_Test (Pixel 6, API 35, arm64-v8a)
+
+### Issue 1 — Oboe requires shared STL
+**Error:** `CXX1212 ... User is using a static STL but library requires a shared STL [//oboe/oboe]`
+
+**Root Cause:** Oboe 1.9.0 (via prefab) is built against `c++_shared`, but the pitch-detector module's CMake defaulted to `c++_static`.
+
+**Fix:** Added `arguments "-DANDROID_STL=c++_shared"` to the cmake block in `modules/pitch-detector/android/build.gradle`.
+
+### Issue 2 — getLatestPitch returns note+octave (same as iOS Issue 6)
+**Root Cause:** `PitchDetectorModule.kt` returned `"$noteName$octave"` (e.g. `"D2"`) in the `note` field. TypeScript `PitchResult.note` expects just the note name (e.g. `"D"`), with `octave` as a separate numeric field.
+
+**Fix:** Changed to return `noteName` (without octave) and added separate `"octave" to octave` entry in the result map.
+
+### Result
+Android build succeeds. App launches and renders all screens correctly in emulator (API 35, arm64-v8a). Only one build fix needed (shared STL) — significantly smoother than iOS.
+
+### Emulator Mic/Audio Limitations
+- **Microphone**: The pitch-detector module uses Oboe with `InputPreset::Unprocessed` for low-latency audio capture. The emulator does support virtual mic input but quality/latency is unreliable. **Recommendation: test pitch detection on a physical device.**
+- **Audio permissions**: RECORD_AUDIO permission is declared in AndroidManifest.xml and requested at runtime via `PitchDetectorModule.kt`. The emulator auto-grants this in debug builds.
+- **Sound effects**: expo-audio playback works in the emulator (tested with `-no-audio` flag which disables host audio but doesn't crash the app).
+
+### Build Verification Script
+`scripts/verify-android-build.sh` — automated 11-point check covering:
+- Environment (JDK 17, SDK, NDK)
+- Gradle assembleDebug success
+- APK exists with correct native libs (libpitch-detector.so + liboboe.so for all 4 ABIs)
+
 ## Notes
 Agents: after completing a task, mark it done above and add a short note below if anything is worth sharing with future agents (gotchas, decisions made, deviations from plan).
 
