@@ -1,8 +1,7 @@
 # Progress
 
-## Completed Tasks
-- 001–012: Full app built — scaffolding, fretboard data layer, state management (MMKV), pitch detection, quiz engine, all screens (home, quiz, results, stats/mastery, settings), sound effects & visual polish.
-- 013–021: Custom native pitch detection module replacing JS-based detection — C++ DSP core (YIN + NoteMapper), iOS audio capture (AVAudioEngine), Android audio capture (Oboe), JSI TurboModule binding, signal smoothing/latency validation, test suite, and swap into app.
+## Current State
+All core features complete: fretboard data layer, state management (MMKV), custom native pitch detection (C++ YIN), quiz engine, all screens (home, quiz, results, stats/mastery, settings), sound effects, visual polish, configurable detection sensitivity/noise gate, note hold duration, shake-to-undo, and swipeable tab navigation.
 
 ## Architecture Notes
 
@@ -16,10 +15,10 @@ Settings UI (1–10 steppers) → settingsStore (MMKV)
 ```
 
 - **Native module location**: `modules/pitch-detector/`
-- **Shared C++ sources**: `modules/pitch-detector/cpp/` — iOS copies these into `ios/generated_cpp/` via podspec staging (CocoaPods can't resolve sources outside podspec root).
+- **Shared C++ sources**: `modules/pitch-detector/cpp/` — iOS copies into `ios/generated_cpp/` via podspec staging (CocoaPods can't resolve sources outside podspec root).
 - **PitchResult.note** must be note name only (e.g. `"D"`, not `"D2"`). `octave` and `cents` are separate fields.
 - **Ring buffer capacity**: 16384 samples (must exceed hardware buffer delivery size — 48kHz delivers ~4800 frames/tap).
-- **Sample rate**: All pipeline components must use the hardware rate (typically 48kHz). YIN, HighPassFilter, and RingBuffer are configured at runtime via `configureSampleRate:`.
+- **Sample rate**: All pipeline components use hardware rate (typically 48kHz). YIN, HighPassFilter, and RingBuffer configured at runtime via `configureSampleRate:`.
 - **Stale detection clearing**: After 3 consecutive no-pitch frames, stored result resets to zero.
 
 ### iOS-Specific
@@ -40,12 +39,13 @@ Settings UI (1–10 steppers) → settingsStore (MMKV)
 - `inhibit_all_warnings!` in Podfile suppresses dependency warnings.
 - expo-audio (not expo-av) for SDK 55.
 
-### Configurable Detection Settings
+### Detection Settings
 | Setting | UI Range | Level 1 | Level 5 (default) | Level 10 |
 |---------|----------|---------|--------------------|----------|
-| Sensitivity → JS minConfidence | 1–10 | 0.97 | 0.85 | 0.50 |
-| Sensitivity → Native MIN_CONFIDENCE | 1–10 | 0.80 | 0.50 | 0.15 |
-| Noise Gate → RMS_SILENCE_THRESHOLD | 1–10 | 0.002 | 0.01 | 0.10 |
+| Sensitivity → JS minConfidence | 1–10 | 0.90 | 0.85 | 0.30 |
+| Sensitivity → Native MIN_CONFIDENCE | 1–10 | 0.65 | 0.50 | 0.05 |
+| Noise Gate → RMS_SILENCE_THRESHOLD | 1–10 | 0.005 | 0.01 | 0.20 |
+| Note Duration | 0/100/200/300/500ms | — | 200ms | — |
 
 ## Debug Instrumentation (remove before release)
 - `AudioCaptureManager.swift`: NSLog of hwFormat, session, engine state, per-tap RMS
