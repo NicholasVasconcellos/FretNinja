@@ -4,4 +4,8 @@ dist/
 /ios/
 /android/
 /tmp/
+
+# Native module build artifacts
 modules/pitch-detector/cpp/tests/build/
+modules/pitch-detector/android/.cxx/
+modules/pitch-detector/android/build/
