@@ -31,11 +31,6 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
-        "RECORD_AUDIO",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS",
-        "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ],
       "package": "com.anonymous.FretNinja"
@@ -47,6 +42,13 @@
       "expo-router",
       "expo-audio",
       "./modules/pitch-detector/plugin/build/index"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "21d8850b-0a9b-443c-9cfe-284097e6b3ba"
+      }
+    },
+    "owner": "nicholasvasconcellos"
   }
 }
