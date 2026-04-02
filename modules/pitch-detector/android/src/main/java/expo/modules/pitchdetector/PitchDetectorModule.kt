@@ -6,7 +6,7 @@ import androidx.core.content.ContextCompat
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import expo.modules.kotlin.Promise
-import expo.modules.interfaces.permissions.Permissions
+import expo.modules.interfaces.permissions.PermissionsStatus
 
 class PitchDetectorModule : Module() {
   companion object {
@@ -31,22 +31,39 @@ class PitchDetectorModule : Module() {
       }
 
       val permission = Manifest.permission.RECORD_AUDIO
-      if (ContextCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED) {
-        Permissions.askForPermissionsWithPermissionsManager(
-          appContext.permissions,
-          promise,
-          permission
-        )
-        // After permission is granted, the JS side should call start() again
+      if (ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED) {
+        val success = nativeStart()
+        if (success) {
+          promise.resolve(null)
+        } else {
+          promise.reject("ERR_AUDIO_START", "Failed to start Oboe audio stream", null)
+        }
         return@AsyncFunction
       }
 
-      val success = nativeStart()
-      if (success) {
-        promise.resolve(null)
-      } else {
-        promise.reject("ERR_AUDIO_START", "Failed to start Oboe audio stream", null)
+      // Request permission, then start stream in the callback
+      val pm = appContext.permissions
+      if (pm == null) {
+        promise.reject("ERR_NO_PERMISSIONS", "Permissions manager not available", null)
+        return@AsyncFunction
       }
+
+      pm.askForPermissions(
+        { results ->
+          val granted = results.values.any { it.status == PermissionsStatus.GRANTED }
+          if (granted) {
+            val success = nativeStart()
+            if (success) {
+              promise.resolve(null)
+            } else {
+              promise.reject("ERR_AUDIO_START", "Failed to start Oboe audio stream", null)
+            }
+          } else {
+            promise.reject("ERR_PERMISSION_DENIED", "Microphone permission denied", null)
+          }
+        },
+        permission
+      )
     }
 
     Function("stop") {
@@ -63,14 +80,16 @@ class PitchDetectorModule : Module() {
         if (c1.code != 0) append(c1)
         if (c2.code != 0) append(c2)
       }
-      val octave = raw[3].toInt()
 
       mapOf(
         "frequency" to raw[0].toDouble(),
         "confidence" to raw[1].toDouble(),
         "note" to noteName,
-        "octave" to octave,
-        "cents" to raw[2].toDouble()
+        "octave" to raw[3].toInt(),
+        "cents" to raw[2].toDouble(),
+        "_dbgBuffers" to raw[7].toInt(),
+        "_dbgDetects" to raw[8].toInt(),
+        "_dbgRms" to raw[9].toDouble()
       )
     }
 

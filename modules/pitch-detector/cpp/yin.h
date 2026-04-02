@@ -14,7 +14,7 @@ constexpr float MIN_CONFIDENCE = 0.5f;
 
 // Signal processing constants
 constexpr float EMA_ALPHA = 0.35f;
-constexpr float RMS_SILENCE_THRESHOLD = 0.01f;
+constexpr float RMS_SILENCE_THRESHOLD = 0.002f;
 constexpr float CLIPPING_THRESHOLD = 0.99f;
 
 class YIN {

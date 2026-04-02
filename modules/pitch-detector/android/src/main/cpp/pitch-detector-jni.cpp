@@ -27,20 +27,24 @@ Java_expo_modules_pitchdetector_PitchDetectorModule_nativeStop(
 JNIEXPORT jfloatArray JNICALL
 Java_expo_modules_pitchdetector_PitchDetectorModule_nativeGetLatestPitch(
     JNIEnv* env, jobject /*thiz*/) {
-  // Returns [frequency, confidence, cents, octave, noteName0, noteName1, noteName2]
-  // as a float array (note chars encoded as float codepoints)
-  jfloatArray result = env->NewFloatArray(7);
+  // Returns [frequency, confidence, cents, octave, noteName0..2, bufferCount, detectCount, rms]
+  jfloatArray result = env->NewFloatArray(10);
   if (!result) return nullptr;
 
   float frequency = 0.0f, confidence = 0.0f, cents = 0.0f;
   int octave = 0;
   char noteName[4] = {'\0'};
+  int bufferCount = 0, detectCount = 0;
+  float rms = 0.0f;
 
   if (g_capture) {
     g_capture->getLatestPitch(frequency, confidence, cents, octave, noteName);
+    bufferCount = g_capture->getDebugBufferCount();
+    detectCount = g_capture->getDebugDetectCount();
+    rms = g_capture->getDebugRms();
   }
 
-  float data[7];
+  float data[10];
   data[0] = frequency;
   data[1] = confidence;
   data[2] = cents;
@@ -48,8 +52,11 @@ Java_expo_modules_pitchdetector_PitchDetectorModule_nativeGetLatestPitch(
   data[4] = static_cast<float>(noteName[0]);
   data[5] = static_cast<float>(noteName[1]);
   data[6] = static_cast<float>(noteName[2]);
+  data[7] = static_cast<float>(bufferCount);
+  data[8] = static_cast<float>(detectCount);
+  data[9] = rms;
 
-  env->SetFloatArrayRegion(result, 0, 7, data);
+  env->SetFloatArrayRegion(result, 0, 10, data);
   return result;
 }
 

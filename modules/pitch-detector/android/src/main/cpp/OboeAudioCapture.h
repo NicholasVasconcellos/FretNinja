@@ -29,6 +29,16 @@ struct AtomicPitchData {
     noteName2.store(n.size() > 2 ? n[2] : '\0', std::memory_order_release);
   }
 
+  void clear() {
+    frequency.store(0.0f, std::memory_order_relaxed);
+    confidence.store(0.0f, std::memory_order_relaxed);
+    cents.store(0.0f, std::memory_order_relaxed);
+    octave.store(0, std::memory_order_relaxed);
+    noteName0.store('\0', std::memory_order_relaxed);
+    noteName1.store('\0', std::memory_order_relaxed);
+    noteName2.store('\0', std::memory_order_release);
+  }
+
   void load(float& freq, float& conf, float& c, int& oct, char name[4]) {
     // Read note name last char first (release-paired)
     name[2] = noteName2.load(std::memory_order_acquire);
@@ -67,6 +77,11 @@ public:
   void onErrorAfterClose(oboe::AudioStream* stream,
                          oboe::Result error) override;
 
+  // Debug accessors (match iOS _dbg* fields)
+  int getDebugBufferCount() const { return bufferCallCount_.load(std::memory_order_relaxed); }
+  int getDebugDetectCount() const { return detectCallCount_.load(std::memory_order_relaxed); }
+  float getDebugRms() const { return lastRms_.load(std::memory_order_relaxed); }
+
 private:
   std::shared_ptr<oboe::AudioStream> stream_;
   RingBuffer ringBuffer_;
@@ -75,7 +90,17 @@ private:
   float frameBuffer_[FRAME_SIZE];
   float filterBuffer_[4096];
   int bufferedSamples_ = 0;
+  int noPitchCount_ = 0;
   AtomicPitchData latestPitch_;
   std::atomic<bool> running_{false};
   std::atomic<int64_t> lastBufferTimestampNs_{0};
+
+  // Configured thresholds (persisted across YIN recreation in start())
+  float configuredRmsThreshold_ = RMS_SILENCE_THRESHOLD;
+  float configuredMinConfidence_ = MIN_CONFIDENCE;
+
+  // Debug counters
+  std::atomic<int> bufferCallCount_{0};
+  std::atomic<int> detectCallCount_{0};
+  std::atomic<float> lastRms_{0.0f};
 };
