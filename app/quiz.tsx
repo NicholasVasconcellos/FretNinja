@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, typography } from '../constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, spacing, typography, iconSize } from '../constants/theme';
 import { useQuizEngine } from '../hooks/useQuizEngine';
 import { useShakeDetector } from '../hooks/useShakeDetector';
 import { usePitchDetector } from '../modules/pitch-detector/src';
@@ -191,8 +192,9 @@ export default function QuizScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header: quit button + score */}
       <View style={styles.header}>
-        <Pressable onPress={handleQuit} hitSlop={12}>
-          <Text style={styles.quitText}>✕ Quit</Text>
+        <Pressable onPress={handleQuit} hitSlop={12} style={styles.quitBtn}>
+          <Ionicons name="close" size={iconSize.sm} color={colors.textMuted} />
+          <Text style={styles.quitText}>Quit</Text>
         </Pressable>
       </View>
 
@@ -265,6 +267,11 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
+  },
+  quitBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   quitText: {
     fontSize: 16,

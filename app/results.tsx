@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../constants/theme';
 import { useRoundStore } from '../stores/roundStore';
 import { calculateRoundStats } from '../utils/scoring';
@@ -306,9 +307,14 @@ function QuestionRow({
       </Text>
 
       {!result.correct && (
-        <Text style={styles.qPlayed}>
-          → {result.playedNote ?? '⏱'}
-        </Text>
+        <View style={styles.qPlayedWrap}>
+          <Text style={styles.qPlayed}>{'→ '}</Text>
+          {result.playedNote ? (
+            <Text style={styles.qPlayed}>{result.playedNote}</Text>
+          ) : (
+            <Ionicons name="timer-outline" size={14} color={colors.hotPink} />
+          )}
+        </View>
       )}
 
       <Text style={[styles.qTime, isSlow && { color: colors.neonYellow }]}>
@@ -500,6 +506,10 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: colors.textSecondary,
     flex: 1,
+  },
+  qPlayedWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   qPlayed: {
     fontSize: 13,

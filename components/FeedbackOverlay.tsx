@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text } from 'react-native';
+import { Animated, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, glow } from '../constants/theme';
 
 interface FeedbackOverlayProps {
@@ -69,9 +70,11 @@ export function FeedbackOverlay({ type }: FeedbackOverlayProps) {
         { transform: [{ scale }] },
         isCorrect ? glowCorrect : glowIncorrect,
       ]}>
-        <Text style={[styles.icon, { color: isCorrect ? colors.correct : colors.incorrect }]}>
-          {isCorrect ? '✓' : '✗'}
-        </Text>
+        <Ionicons
+          name={isCorrect ? 'checkmark-sharp' : 'close-sharp'}
+          size={72}
+          color={isCorrect ? colors.correct : colors.incorrect}
+        />
       </Animated.View>
     </Animated.View>
   );
@@ -100,9 +103,5 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  icon: {
-    fontSize: 96,
-    fontWeight: '800',
   },
 });

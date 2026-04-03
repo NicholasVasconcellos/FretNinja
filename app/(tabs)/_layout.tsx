@@ -1,10 +1,20 @@
 import { Tabs } from 'expo-router';
-import { Text, StyleSheet } from 'react-native';
-import { colors } from '../../constants/theme';
+import { View, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, iconSize, alpha } from '../../constants/theme';
 
-function TabIcon({ label, focused }: { label: string; focused: boolean }) {
+type TabIconName = 'home' | 'bar-chart' | 'settings';
+
+function TabIcon({ name, focused }: { name: TabIconName; focused: boolean }) {
+  const iconName = focused ? name : (`${name}-outline` as const);
   return (
-    <Text style={[styles.icon, focused && styles.iconFocused]}>{label}</Text>
+    <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
+      <Ionicons
+        name={iconName}
+        size={iconSize.md}
+        color={focused ? colors.neonGreen : colors.textMuted}
+      />
+    </View>
   );
 }
 
@@ -23,21 +33,25 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ focused }) => <TabIcon label="🏠" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon name="home" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="stats"
         options={{
           title: 'Stats',
-          tabBarIcon: ({ focused }) => <TabIcon label="📊" focused={focused} />,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name="bar-chart" focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           title: 'Settings',
-          tabBarIcon: ({ focused }) => <TabIcon label="⚙️" focused={focused} />,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name="settings" focused={focused} />
+          ),
         }}
       />
     </Tabs>
@@ -47,7 +61,7 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: colors.surface,
-    borderTopColor: colors.border,
+    borderTopColor: alpha(colors.neonGreen, 0.12),
     borderTopWidth: 1,
     height: 85,
     paddingTop: 8,
@@ -56,11 +70,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  icon: {
-    fontSize: 22,
-    opacity: 0.5,
+  iconWrap: {
+    padding: 4,
+    borderRadius: 8,
   },
-  iconFocused: {
-    opacity: 1,
+  iconWrapActive: {
+    shadowColor: colors.neonGreen,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    elevation: 5,
   },
 });

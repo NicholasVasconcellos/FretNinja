@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, typography, spacing } from '../../constants/theme';
 import { useMasteryData } from '../../hooks/useMasteryData';
 import MasteryGrid from '../../components/MasteryGrid';
@@ -44,7 +45,12 @@ function ComboRow({ combo, index }: { combo: ComboMastery; index: number }) {
 function EmptyState() {
   return (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyIcon}>🎸</Text>
+      <MaterialCommunityIcons
+        name="guitar-electric"
+        size={48}
+        color={colors.textMuted}
+        style={styles.emptyIcon}
+      />
       <Text style={styles.emptyTitle}>No stats yet</Text>
       <Text style={styles.emptyBody}>
         Complete a quiz round to start tracking your fretboard mastery.
@@ -261,7 +267,6 @@ const styles = StyleSheet.create({
     paddingVertical: 80,
   },
   emptyIcon: {
-    fontSize: 48,
     marginBottom: spacing.md,
   },
   emptyTitle: {
